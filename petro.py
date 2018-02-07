@@ -114,10 +114,13 @@ def testFourPhaseModel():
 
     plt.figure()
     im = plt.imshow(fa + fi + fw, vmin=0, vmax=0.5)
-    cb = plt.colorbar(im)
+    plt.colorbar(im)
 
     return fig
 
 if __name__ == '__main__':
+    import seaborn
+    seaborn.set(font="Fira Sans", style="ticks")
+    plt.rcParams["image.cmap"] = "viridis"
     fig = testFourPhaseModel()
     fig.savefig("4PM_value_range.pdf")
