@@ -63,6 +63,14 @@ class FourPhaseModel():
         fa = 1 - self.fr - self.ice(rho, v) - self.water(rho)
         return fa
 
+    def rho(self, fw):
+        """Return electrical resistivity based on fraction of water `fw`."""
+        return self.a * self.rhow * self.phi**-self.m * (fw/self.phi)**-self.n
+
+    def slowness(self, fw, fi):
+        """Return slowness based on fraction of water `fw` and ice `fi`."""
+        return fw/self.vw + self.fr/self.vr + fi/self.vi + (1-self.fr-fw-fi)/self.va
+
     def all(self, rho, v, mask=False):
         """ Syntatic sugar for all fractions including a mask for unrealistic values. """
         fa = self.air(rho, v)
