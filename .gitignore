@@ -1,0 +1,10 @@
+*.vector
+*.bms
+*.vtk
+*.bmat
+*.matrix
+*.mat
+*.npy
+*.png
+*.npz
+*.pdf
