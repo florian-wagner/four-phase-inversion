@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import pygimli as pg
+
 
 class FourPhaseModel():
     def __init__(self, vw=1500., va=330., vi=3500., vr=6000, a=2., n=1., m=1.,
@@ -47,7 +49,7 @@ class FourPhaseModel():
 
     def water(self, rho):
         fw = ((self.a * self.rhow * self.phi**self.n) /
-              (rho * self.phi**self.m))**1 / self.n
+              (rho * self.phi**self.m))**(1 / self.n)
         return fw
 
     def ice(self, rho, v):
@@ -65,11 +67,22 @@ class FourPhaseModel():
 
     def rho(self, fw):
         """Return electrical resistivity based on fraction of water `fw`."""
-        return self.a * self.rhow * self.phi**-self.m * (fw/self.phi)**-self.n
+        rho = self.a * self.rhow * self.phi**(-self.m) * (fw /
+                                                          self.phi)**(-self.n)
+        if (rho <= 0).any():
+            pg.warn("Found negative resistivity, setting to nearest above zero.")
+            rho[rho<=0] = np.min(rho[rho>=0])
+        return rho
+
 
     def slowness(self, fw, fi):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
-        return fw/self.vw + self.fr/self.vr + fi/self.vi + (1-self.fr-fw-fi)/self.va
+        s = fw / self.vw + self.fr / self.vr + fi / self.vi + (1 - self.fr - fw
+                                                               - fi) / self.va
+        if (s <= 0).any():
+            pg.warn("Found negative slowness, setting to nearest above zero.")
+            s[s <= 0] = np.min(s[s >= 0])
+        return s
 
     def all(self, rho, v, mask=False):
         """ Syntatic sugar for all fractions including a mask for unrealistic values. """
@@ -78,11 +91,8 @@ class FourPhaseModel():
         fw = self.water(rho)
 
         # Check that fractions are between 0 and 1
-        array_mask = np.array(
-            ((fa < 0) | (fa > 1)) |
-            ((fi < 0) | (fi > 1)) |
-            ((fw < 0) | (fw > 1))
-        )
+        array_mask = np.array(((fa < 0) | (fa > 1)) | ((fi < 0) | (fi > 1)) | (
+            (fw < 0) | (fw > 1)))
         if array_mask.sum() > 1:
             print("WARNING: %d of %d fraction values outside 0-1 range." %
                   (int(array_mask.sum()), len(array_mask.ravel())))
@@ -106,8 +116,8 @@ def testFourPhaseModel():
 
     fa, fi, fw, mask = fpm.all(y, x, mask=True)
 
-    cmap = plt.cm.get_cmap('Spectral_r', 41)    # 11 discrete colors
-    fig, axs = plt.subplots(3, figsize=(6,4.5), sharex=True)
+    cmap = plt.cm.get_cmap('Spectral_r', 41)
+    fig, axs = plt.subplots(3, figsize=(6, 4.5), sharex=True)
     labels = ["Air content", "Ice content", "Water content"]
     for data, ax, label in zip([fa, fi, fw], axs, labels):
         im = ax.imshow(data[::-1], cmap=cmap, extent=[
@@ -125,6 +135,7 @@ def testFourPhaseModel():
     plt.colorbar(im)
 
     return fig
+
 
 if __name__ == '__main__':
     import seaborn
