@@ -14,13 +14,16 @@ seaborn.set(font="Fira Sans", style="ticks")
 plt.rcParams["image.cmap"] = "viridis"
 
 # Load data
-mesh = pg.load("mesh.bms")
+mesh = pg.load("brute/mesh.bms")
+meshj = pg.load("brute/paraDomain.bms")
 true = np.load("true_model.npz")
 est = np.load("conventional.npz")
+joint = np.load("brute/joint_inversion.npz")
 sensors = np.load("sensors.npy")
 
 veltrue, rhotrue, fa, fi, fw = true["vel"], true["rho"], true["fa"], true["fi"], true["fw"]
 velest, rhoest, fae, fie, fwe = est["vel"], est["rho"], est["fa"], est["fi"], est["fw"]
+veljoint, rhojoint, faj, fij, fwj = joint["vel"], joint["rho"], joint["fa"], joint["fi"], joint["fw"]
 
 labels = ["$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$"]
 long_labels = [
@@ -49,7 +52,7 @@ def update_ticks(cb, log=False, label=""):
         t = ticker.LinearLocator(numticks=2)
     cb.ax.annotate(label,
                 xy=(1, 0.5), xycoords='axes fraction',
-                xytext=(100, 0), textcoords='offset pixels',
+                xytext=(65, 0), textcoords='offset pixels',
                 horizontalalignment='center',
                 verticalalignment='center', rotation=90)
     cb.set_ticks(t)
@@ -69,38 +72,43 @@ def lim(data):
     }
     return kwargs
 
-fig = plt.figure(figsize=(8, 12))
-grid = ImageGrid(fig, 111, nrows_ncols=(5, 2), axes_pad=0.15, share_all=True,
+fig = plt.figure(figsize=(10, 14))
+grid = ImageGrid(fig, 111, nrows_ncols=(5, 3), axes_pad=0.15, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.15, aspect=True)
 
 im = draw(grid.axes_row[0][0], mesh, veltrue, **lim(veltrue), logScale=False)
 im = draw(grid.axes_row[0][1], mesh, velest, **lim(veltrue), logScale=False)
+im = draw(grid.axes_row[0][2], meshj, veljoint, **lim(veltrue), logScale=False)
 cb = fig.colorbar(im, cax=grid.cbar_axes[0])
 update_ticks(cb, label=labels[0])
 
 im = draw(grid.axes_row[1][0], mesh, rhotrue, cmap="Spectral_r", **lim(rhotrue))
 im = draw(grid.axes_row[1][1], mesh, rhoest, cmap="Spectral_r", **lim(rhotrue))
+im = draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(rhotrue))
 cb = fig.colorbar(im, cax=grid.cbar_axes[1])
 update_ticks(cb, log=True, label=labels[1])
 
 im = draw(grid.axes_row[2][0], mesh, fa, logScale=False, cmap="Greens", **lim(fa))
 im = draw(grid.axes_row[2][1], mesh, fae, logScale=False, cmap="Greens", **lim(fa))
+im = draw(grid.axes_row[2][2], meshj, faj, logScale=False, cmap="Greens", **lim(fa))
 cb = fig.colorbar(im, cax=grid.cbar_axes[2])
 update_ticks(cb, label=labels[2])
 
 im = draw(grid.axes_row[3][0], mesh, fi, logScale=False, cmap="Purples", **lim(fi))
 im = draw(grid.axes_row[3][1], mesh, fie, logScale=False, cmap="Purples", **lim(fi))
+im = draw(grid.axes_row[3][2], meshj, fij, logScale=False, cmap="Purples", **lim(fi))
 cb = fig.colorbar(im, cax=grid.cbar_axes[3])
 update_ticks(cb, label=labels[3])
 
 im = draw(grid.axes_row[4][0], mesh, fw, logScale=False, cmap="Blues", **lim(fw))
 im = draw(grid.axes_row[4][1], mesh, fwe, logScale=False, cmap="Blues", **lim(fw))
+im = draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues", **lim(fw))
 cb = fig.colorbar(im, cax=grid.cbar_axes[4])
 update_ticks(cb, label=labels[4])
 
 for ax, title in zip(grid.axes_row[0],
-                     ["True model", "Conventional inversion + 4PM"]):
+                     ["True model", "Conventional inversion + 4PM", "Petrophysical joint inversion"]):
     ax.set_title(title, fontweight="bold")
 
 for ax in grid.axes_all:
@@ -121,5 +129,6 @@ for ax, label in zip(grid.axes_column[0], long_labels):
     add_inner_title(ax, label, loc=3)
     ax.set_ylabel("y (m)")
 
-fig.savefig("conventional.png", dpi=150)
+fig.savefig("4PM_joint_inversion.png", dpi=150)
+fig.savefig("4PM_joint_inversion.pdf", dpi=150)
 pg.wait()
