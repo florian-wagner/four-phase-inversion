@@ -52,7 +52,7 @@ def update_ticks(cb, log=False, label=""):
         t = ticker.LinearLocator(numticks=2)
     cb.ax.annotate(label,
                 xy=(1, 0.5), xycoords='axes fraction',
-                xytext=(65, 0), textcoords='offset pixels',
+                xytext=(80, 0), textcoords='offset pixels',
                 horizontalalignment='center',
                 verticalalignment='center', rotation=90)
     cb.set_ticks(t)
@@ -64,15 +64,17 @@ def update_ticks(cb, log=False, label=""):
 def lim(data):
     dmin = np.around(data.min(), 2)
     dmax = np.around(data.max(), 2)
+    print(dmin, dmax)
     if dmin < 0.02:
         dmin = 0
     kwargs = {
         "cMin": dmin,
         "cMax": dmax
     }
+    print(dmin, dmax)
     return kwargs
 
-fig = plt.figure(figsize=(10, 14))
+fig = plt.figure(figsize=(14, 14))
 grid = ImageGrid(fig, 111, nrows_ncols=(5, 3), axes_pad=0.15, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.15, aspect=True)
@@ -83,9 +85,9 @@ im = draw(grid.axes_row[0][2], meshj, veljoint, **lim(veltrue), logScale=False)
 cb = fig.colorbar(im, cax=grid.cbar_axes[0])
 update_ticks(cb, label=labels[0])
 
-im = draw(grid.axes_row[1][0], mesh, rhotrue, cmap="Spectral_r", **lim(rhotrue))
-im = draw(grid.axes_row[1][1], mesh, rhoest, cmap="Spectral_r", **lim(rhotrue))
-im = draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(rhotrue))
+im = draw(grid.axes_row[1][0], mesh, rhotrue, cmap="Spectral_r", **lim(rhotrue), logScale=True)
+im = draw(grid.axes_row[1][1], mesh, rhoest, cmap="Spectral_r", **lim(rhotrue), logScale=True)
+im = draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(rhotrue), logScale=True)
 cb = fig.colorbar(im, cax=grid.cbar_axes[1])
 update_ticks(cb, log=True, label=labels[1])
 
@@ -113,7 +115,7 @@ for ax, title in zip(grid.axes_row[0],
 
 for ax in grid.axes_all:
     ax.plot(sensors, np.zeros_like(sensors), 'wv')
-    ax.set_aspect(2)
+    ax.set_aspect(1.8)
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -129,6 +131,7 @@ for ax, label in zip(grid.axes_column[0], long_labels):
     add_inner_title(ax, label, loc=3)
     ax.set_ylabel("y (m)")
 
-fig.savefig("4PM_joint_inversion.png", dpi=150)
-fig.savefig("4PM_joint_inversion.pdf", dpi=150)
-pg.wait()
+fig.show()
+fig.savefig("4PM_joint_inversion.png", dpi=120)
+# fig.savefig("4PM_joint_inversion.pdf")
+# pg.wait()

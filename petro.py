@@ -67,18 +67,18 @@ class FourPhaseModel():
 
     def rho(self, fw):
         """Return electrical resistivity based on fraction of water `fw`."""
-        rho = self.a * self.rhow * self.phi**(-self.m) * (fw /
-                                                          self.phi)**(-self.n)
+        rho = self.a * self.rhow * self.phi**(-self.m) * (fw / self.phi)**(
+            -self.n)
         if (rho <= 0).any():
-            pg.warn("Found negative resistivity, setting to nearest above zero.")
-            rho[rho<=0] = np.min(rho[rho>=0])
+            pg.warn(
+                "Found negative resistivity, setting to nearest above zero.")
+            rho[rho <= 0] = np.min(rho[rho >= 0])
         return rho
-
 
     def slowness(self, fw, fi):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
-        s = fw / self.vw + self.fr / self.vr + fi / self.vi + (1 - self.fr - fw
-                                                               - fi) / self.va
+        s = fw / self.vw + self.fr / self.vr + fi / self.vi + (
+            1 - self.fr - fw - fi) / self.va
         if (s <= 0).any():
             pg.warn("Found negative slowness, setting to nearest above zero.")
             s[s <= 0] = np.min(s[s >= 0])
@@ -91,8 +91,8 @@ class FourPhaseModel():
         fw = self.water(rho)
 
         # Check that fractions are between 0 and 1
-        array_mask = np.array(((fa < 0) | (fa > 1)) | ((fi < 0) | (fi > 1)) | (
-            (fw < 0) | (fw > 1)))
+        array_mask = np.array(((fa < 0) | (fa > 1)) | ((fi < 0) | (fi > 1)) |
+                              ((fw < 0) | (fw > 1)))
         if array_mask.sum() > 1:
             print("WARNING: %d of %d fraction values outside 0-1 range." %
                   (int(array_mask.sum()), len(array_mask.ravel())))
@@ -106,8 +106,8 @@ class FourPhaseModel():
 
 def testFourPhaseModel():
     # Parameters from Hauck et al. (2011)
-    fpm = FourPhaseModel(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2.,
-                         m=2., a=1., rhow=200.)
+    fpm = FourPhaseModel(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2., m=2.,
+                         a=1., rhow=200.)
 
     assert fpm.water(10.0) == 10.0
     v = np.linspace(500, 6000, 1000)
@@ -121,7 +121,9 @@ def testFourPhaseModel():
     labels = ["Air content", "Ice content", "Water content"]
     for data, ax, label in zip([fa, fi, fw], axs, labels):
         im = ax.imshow(data[::-1], cmap=cmap, extent=[
-            v.min(), v.max(), np.log10(rho.min()), np.log10(rho.max())
+            v.min(), v.max(),
+            np.log10(rho.min()),
+            np.log10(rho.max())
         ], aspect="auto", vmin=0, vmax=0.5)
         cb = plt.colorbar(im, ax=ax, label=label)
 
