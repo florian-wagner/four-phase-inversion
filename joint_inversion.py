@@ -3,6 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 import pybert as pb
 import pygimli as pg
@@ -39,10 +40,15 @@ meshERT = mt.appendTriangleBoundary(meshRST, xbound=1000, ybound=500,
                                     isSubSurface=True)
 pg.show(meshERT)
 
-# Inititalize petrophysical four-phase model
 fpm = FourPhaseModel()
+# fa, fi, fw, mask = fpm.all(rhotrue, veltrue)
 
-# Initialize managers
+res = pg.RVector()
+pg.interpolate(mesh, rhotrue, meshRST.cellCenters(), res)
+
+vel = pg.RVector()
+pg.interpolate(mesh, veltrue, meshRST.cellCenters(), vel)
+
 ert = ERTManager()
 ert.setMesh(meshERT)
 ert.setData(ertScheme)
@@ -59,16 +65,57 @@ class JointMod(pg.ModellingBase):
         for i in range(2):
             for cell in mesh.cells():
                 cell.setMarker(i + 1)
+
             self.meshlist.append(pg.Mesh(mesh))
             self.regionManager().addRegion(i + 1, self.meshlist[i])
+            # Set first order smoothing constraints
             self.regionManager().region(i + 1).setConstraintType(1)
 
         self.mesh = self.meshlist[0]
         self.ERT = ertfop
         self.RST = rstfop
+        self.fops = [self.RST, self.ERT]
         self.fpm = petromodel
         self.cellCount = self.mesh.cellCount()
         self.createConstraints()
+
+    def createJacobian(self, model):
+        fw = np.array(model[:self.cellCount])
+        fi = np.array(model[self.cellCount:])
+
+        rho = self.fpm.rho(fw)
+        s = self.fpm.slowness(fw, fi)
+
+        self.ERT.fop.createJacobian(rho)
+        self.RST.fop.createJacobian(s)
+
+        jacERT = self.ERT.fop.jacobian()
+        jacRST = self.RST.fop.jacobian()
+
+        self.jac = pg.BlockMatrix()
+        nData = 0
+
+        # Setting inner derivatives
+        # rUL = 1. / self.fpm.vw - 1./self.fpm.vr - 1. / self.fpm.va
+        # rUR = 1. / self.fpm.vi - 1./self.fpm.vr - 1. / self.fpm.va
+        rUL = 1. / self.fpm.vw - 1. / self.fpm.va
+        rUR = 1. / self.fpm.vi - 1. / self.fpm.va
+        rLL = self.fpm.rho_deriv(fw)
+
+        self.jacUL = pg.MultRightMatrix(jacRST, r=rUL)
+        self.jacUR = pg.MultRightMatrix(jacRST, r=rUR)
+        self.jacLL = pg.MultRightMatrix(jacERT, r=rLL)
+
+        self.jac.addMatrix(self.jacUL, nData, 0)
+        self.jac.addMatrix(self.jacUR, nData, self.cellCount)
+        nData += self.RST.fop.data().size()  # update total vector length
+        self.jac.addMatrix(self.jacLL, nData, 0)
+        self.setJacobian(self.jac)
+
+    # def createJacobian(self, model):
+    #     """Fill the individual jacobian matrices."""
+    #     self.fop.createJacobian(self.trans(model))
+    #     self.jac.r = self.trans.deriv(model)  # set inner derivative
 
     # def createConstraints(self):
     #     self._Ctmp = pg.RSparseMapMatrix()
@@ -86,12 +133,13 @@ class JointMod(pg.ModellingBase):
         rho = self.fpm.rho(fw)
         s = self.fpm.slowness(fw, fi)
 
-        fig, axs = plt.subplots(2,2)
-        pg.show(self.mesh, fw, ax=axs[0,0], label="Water content", hold=True, logScale=False)
-        pg.show(self.mesh, fi, ax=axs[1,0], label="Ice content", hold=True, logScale=False)
-        pg.show(self.mesh, rho, ax=axs[0,1], label="Rho", hold=True)
-        pg.show(self.mesh, 1/s, ax=axs[1,1], label="Velocity", hold=True)
-
+        fig, axs = plt.subplots(2, 2)
+        pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
+                logScale=False)
+        pg.show(self.mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
+                logScale=False)
+        pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True)
+        pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity", hold=True)
 
     def response(self, model):
         return self.response_mt(model)
@@ -107,17 +155,16 @@ class JointMod(pg.ModellingBase):
         print("Water:", np.min(fw), np.mean(fw), np.max(fw))
         print("Ice:", np.min(fi), np.mean(fi), np.max(fi))
         print("Rho:", np.min(rho), np.mean(rho), np.max(rho))
-        print("Vel:", np.min(1/s), np.mean(1/s), np.max(1/s))
+        print("Vel:", np.min(1 / s), np.mean(1 / s), np.max(1 / s))
 
         t = self.RST.fop.response(s)
         rhoa = self.ERT.fop.response(rho)
-        # t = ttData("t") * 1.1
-        # rhoa = ertScheme("rhoa") * 1.1
 
         return pg.cat(t, rhoa)
 
+
 JM = JointMod(meshRST, ert, rst, fpm)
-JM.setMultiThreadJacobian(1)
+# JM.setMultiThreadJacobian(1)
 JM.setVerbose(True)
 
 # Let parameter range between 0 and porosity
@@ -147,7 +194,7 @@ inv.setTransModel(modtrans)
 # Set error
 inv.setRelativeError(0.01)
 
-# Regularization
+# Regularization strength
 inv.setLambda(50)
 inv.setLambdaFactor(0.9)
 
@@ -162,5 +209,51 @@ inv.fop().createConstraints()
 JM(startmodel)
 
 # Save parameter domain for visualization later
-inv.fop().regionManager().paraDomain().save("paraDomain.bms")
-# inv.run()
+# inv.fop().regionManager().paraDomain().save("paraDomain.bms")
+inv.run()
+
+#
+# # XXX: Temporary for sens comparsion
+#
+# model = pg.load("./brute/model_0.vector")
+# pd = pg.load("./brute/paraDomain.bms")
+# pg.show(pd, model[:len(model) // 2], label="Fi")
+#
+# jac = pg.MultRightMatrix(pg.load("./brute/sens.bmat"))
+# # sns.heatmap(jac[:ttData.size()])
+#
+# # inv.setModel(model)
+# # inv.run()
+#
+# # inv.run()
+# # print("Chi squared fit:", inv.getChi2())
+# # print(jac[0])
+# # print(JM.jacUL[0])
+#
+# JM.createJacobian(model)
+# # print(JM.jacUL.mult(pg.RVector(JM.cellCount, 1.0))[0])
+# # print(jac.mult(pg.RVector(JM.cellCount, 1.0))[0])
+# plt.close("all")
+#
+#
+# def transFwdWyllieS(phi, vm=4000, vw=1600, va=330):
+#     """Wyllie transformation function slowness(saturation)."""
+#     if va != 330.0:
+#         print(va, "va is not 330.0")
+#         raise BaseException('TODO')
+#     return pg.RTransLin((1 / vw - 1. / va) * phi, (1 - phi) / vm + phi / va)
+#
+#
+# def transFwdArchieS(rFluid=100, phi=0.4, m=1., n=1., a=2.):  # rho(S)
+#     """Inverse Archie transformation function resistivity(saturation)."""
+#     # rho = rFluid * phi^(-m) S^(-n)
+#     return pg.RTransPower(-n, (a * rFluid * phi**(-m))**(1 / n))
+#
+# trans = transFwdArchieS()
+# trans.fwd(0.5)
+# JM.fpm.rho(np.ones(1) * 0.5)
+# JM.fpm.phi
+# JM.fpm.rho(np.ones(1) * 0.4)
+# trans.fwd(1)
+# trans.invTrans(500)
+# JM.fpm.rho_deriv(500)
