@@ -75,6 +75,12 @@ class FourPhaseModel():
             rho[rho <= 0] = np.min(rho[rho >= 0])
         return rho
 
+    def rho_deriv(self, fw):
+        """Derivative d rho / d fw for Jacobian scaling."""
+        deriv = ((self.rhow * self.a) / fw) * self.phi**(-self.m) * self.n * (
+            fw / self.phi)**(-self.n)
+        return deriv
+
     def slowness(self, fw, fi):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
         s = fw / self.vw + self.fr / self.vr + fi / self.vi + (
