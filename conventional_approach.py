@@ -41,8 +41,8 @@ ertScheme = pb.createData(sensors, "dd")
 ert = ERTManager()
 
 # Create suitable mesh for ert forward calculation
-meshERT = mt.createParaMesh(ertScheme, quality=33, paraMaxCellSize=3.0,
-                            boundaryMaxCellSize=50, smooth=[1, 2], paraBoundary=15)
+meshERT = mt.createParaMesh(ertScheme, quality=33, paraMaxCellSize=1.0, paraDX=0.2,
+                            boundaryMaxCellSize=50, smooth=[1, 2], paraBoundary=30)
 
 res = pg.RVector()
 pg.interpolate(mesh, rhotrue, meshERT.cellCenters(), res)
@@ -72,7 +72,7 @@ ttData = rst.simulate(meshERT, 1. / vel, ttScheme, noiseLevel=0.01, noiseAbs=0.0
 ttData.save("tttrue.dat")
 
 rst.setData(ttData)
-rst.createMesh(depth=15., paraMaxCellSize=3.)
+rst.createMesh(depth=15., paraMaxCellSize=1.)
 rst.fop.regionManager().setZWeight(0.5)
 rst.inv.setData(ttData("s"))
 # ttData.set("err", np.ones(len(ttData("s"))) * 0.001)

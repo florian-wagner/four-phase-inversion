@@ -30,8 +30,8 @@ veltrue, rhotrue, fatrue, fitrue, fwtrue = true["vel"], true["rho"], true[
 
 ertScheme = pg.DataContainerERT("erttrue.dat")
 
-meshRST = mt.createParaMesh(ertScheme, paraDepth=15, paraDX=0.33,
-                            paraMaxCellSize=1.5, boundary=0, paraBoundary=3)
+meshRST = mt.createParaMesh(ertScheme, paraDepth=20, paraDX=0.15,
+                            paraMaxCellSize=1, quality=34, boundary=0, paraBoundary=3)
 
 pg.show(meshRST)
 
@@ -141,6 +141,10 @@ class JointMod(pg.ModellingBase):
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True)
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity", hold=True)
 
+    def showData(self, d):
+        pass
+
+
     def response(self, model):
         return self.response_mt(model)
 
@@ -195,8 +199,8 @@ inv.setTransModel(modtrans)
 inv.setRelativeError(0.01)
 
 # Regularization strength
-inv.setLambda(50)
-inv.setLambdaFactor(0.9)
+inv.setLambda(100)
+inv.setLambdaFactor(1)
 
 # Set homogeneous starting model of f_ice, f_water, f_air = phi/3
 n = JM.regionManager().parameterCount()
@@ -211,15 +215,16 @@ JM(startmodel)
 # Save parameter domain for visualization later
 # inv.fop().regionManager().paraDomain().save("paraDomain.bms")
 inv.run()
+JM.showModel(inv.model())
 
 #
 # # XXX: Temporary for sens comparsion
 #
-# model = pg.load("./brute/model_0.vector")
-# pd = pg.load("./brute/paraDomain.bms")
-# pg.show(pd, model[:len(model) // 2], label="Fi")
-#
-# jac = pg.MultRightMatrix(pg.load("./brute/sens.bmat"))
+model = pg.load("./brute/model_0.vector")
+pd = pg.load("./brute/paraDomain.bms")
+pg.show(pd, model[:len(model) // 2], label="Fi")
+
+jac = pg.MultRightMatrix(pg.load("./brute/sens.bmat"))
 # # sns.heatmap(jac[:ttData.size()])
 #
 # # inv.setModel(model)
