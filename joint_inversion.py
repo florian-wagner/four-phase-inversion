@@ -1,6 +1,6 @@
-# import matplotlib; matplotlib.use("Agg")
 import os
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -13,13 +13,11 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
 
-pg.setThreadCount(1)
+# Close open figures from previous run
+plt.close("all")
 
-
-class WorkSpace():
-    """ Empty class to store some data. """
-    pass
-
+# Use 8 CPUs
+pg.setThreadCount(8)
 
 mesh = pg.load("mesh.bms")
 true = np.load("true_model.npz")
@@ -30,8 +28,10 @@ veltrue, rhotrue, fatrue, fitrue, fwtrue = true["vel"], true["rho"], true[
 
 ertScheme = pg.DataContainerERT("erttrue.dat")
 
-meshRST = mt.createParaMesh(ertScheme, paraDepth=20, paraDX=0.15,
-                            paraMaxCellSize=1, quality=34, boundary=0, paraBoundary=3)
+meshRST = mt.createParaMesh(ertScheme, paraDepth=15, paraDX=0.2, smooth=[1, 2],
+                            paraMaxCellSize=1, quality=33.5, boundary=0,
+                            paraBoundary=3)
+meshRST.save("paraDomain.bms")
 
 pg.show(meshRST)
 
@@ -106,16 +106,16 @@ class JointMod(pg.ModellingBase):
         self.jacUR = pg.MultRightMatrix(jacRST, r=rUR)
         self.jacLL = pg.MultRightMatrix(jacERT, r=rLL)
 
-        self.jac.addMatrix(self.jacUL, nData, 0)
-        self.jac.addMatrix(self.jacUR, nData, self.cellCount)
-        nData += self.RST.fop.data().size()  # update total vector length
-        self.jac.addMatrix(self.jacLL, nData, 0)
-        self.setJacobian(self.jac)
+        ULid = self.jac.addMatrix(self.jacUL, nData, 0)
+        # self.jac.addMatrixEntry(ULid, nData, 0)
 
-    # def createJacobian(self, model):
-    #     """Fill the individual jacobian matrices."""
-    #     self.fop.createJacobian(self.trans(model))
-    #     self.jac.r = self.trans.deriv(model)  # set inner derivative
+        URid = self.jac.addMatrix(self.jacUR, nData, self.cellCount)
+        # self.jac.addMatrixEntry(URid, nData, self.cellCount)
+
+        nData += self.RST.fop.data().size()  # update total vector length
+        LLid = self.jac.addMatrix(self.jacLL, nData, 0)
+        # self.jac.addMatrixEntry(LLid, nData, 0)
+        self.setJacobian(self.jac)
 
     # def createConstraints(self):
     #     self._Ctmp = pg.RSparseMapMatrix()
@@ -141,10 +141,6 @@ class JointMod(pg.ModellingBase):
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True)
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity", hold=True)
 
-    def showData(self, d):
-        pass
-
-
     def response(self, model):
         return self.response_mt(model)
 
@@ -168,16 +164,8 @@ class JointMod(pg.ModellingBase):
 
 
 JM = JointMod(meshRST, ert, rst, fpm)
-# JM.setMultiThreadJacobian(1)
+JM.setMultiThreadJacobian(8)
 JM.setVerbose(True)
-
-# Let parameter range between 0 and porosity
-# for i in range(JM.regionManager().regionCount()):
-#     JM.regionManager().region(i + 1).setLowerBound(0.0)
-#     JM.regionManager().region(i + 1).setUpperBound(fpm.phi)
-#     JM.regionManager().region(i + 1).setConstraintType(1)
-# 1/0
-# Inversion
 
 # pg.solver.showSparseMatrix(JM.constraints())
 dtrue = pg.cat(ttData("t"), ertScheme("rhoa"))
@@ -196,69 +184,41 @@ modtrans = pg.RTransLogLU(0, fpm.phi)
 inv.setTransModel(modtrans)
 
 # Set error
-inv.setRelativeError(0.01)
+error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))
+inv.setRelativeError(error)
+
+# Set maximum number of iterations (default is 20)
+inv.setMaxIter(50)
 
 # Regularization strength
-inv.setLambda(100)
-inv.setLambdaFactor(1)
+inv.setLambda(80)
+inv.setLambdaFactor(0.8)
 
 # Set homogeneous starting model of f_ice, f_water, f_air = phi/3
 n = JM.regionManager().parameterCount()
 startmodel = pg.RVector(n, fpm.phi / 3.)
 inv.setModel(startmodel)
 
-inv.fop().createConstraints()
+# Run inversion
+model = inv.run()
+print("Chi squared fit:", inv.getChi2())
 
-# Test fop response
-JM(startmodel)
+# Some visualization and saving
+JM.showModel(model)
 
-# Save parameter domain for visualization later
-# inv.fop().regionManager().paraDomain().save("paraDomain.bms")
-inv.run()
-JM.showModel(inv.model())
+np.savetxt("model_iter%d.dat" % inv.iter(), model)
 
-#
-# # XXX: Temporary for sens comparsion
-#
-model = pg.load("./brute/model_0.vector")
-pd = pg.load("./brute/paraDomain.bms")
-pg.show(pd, model[:len(model) // 2], label="Fi")
+resp = JM(model)
+fit = (resp - dtrue) / dtrue
+plt.figure()
+plt.plot(fit, "r.")
+plt.axvline(ttData.size())
 
-jac = pg.MultRightMatrix(pg.load("./brute/sens.bmat"))
-# # sns.heatmap(jac[:ttData.size()])
-#
-# # inv.setModel(model)
-# # inv.run()
-#
-# # inv.run()
-# # print("Chi squared fit:", inv.getChi2())
-# # print(jac[0])
-# # print(JM.jacUL[0])
-#
-# JM.createJacobian(model)
-# # print(JM.jacUL.mult(pg.RVector(JM.cellCount, 1.0))[0])
-# # print(jac.mult(pg.RVector(JM.cellCount, 1.0))[0])
-# plt.close("all")
-#
-#
-# def transFwdWyllieS(phi, vm=4000, vw=1600, va=330):
-#     """Wyllie transformation function slowness(saturation)."""
-#     if va != 330.0:
-#         print(va, "va is not 330.0")
-#         raise BaseException('TODO')
-#     return pg.RTransLin((1 / vw - 1. / va) * phi, (1 - phi) / vm + phi / va)
-#
-#
-# def transFwdArchieS(rFluid=100, phi=0.4, m=1., n=1., a=2.):  # rho(S)
-#     """Inverse Archie transformation function resistivity(saturation)."""
-#     # rho = rFluid * phi^(-m) S^(-n)
-#     return pg.RTransPower(-n, (a * rFluid * phi**(-m))**(1 / n))
-#
-# trans = transFwdArchieS()
-# trans.fwd(0.5)
-# JM.fpm.rho(np.ones(1) * 0.5)
-# JM.fpm.phi
-# JM.fpm.rho(np.ones(1) * 0.4)
-# trans.fwd(1)
-# trans.invTrans(500)
-# JM.fpm.rho_deriv(500)
+# Save results
+fwe = np.array(model[:JM.cellCount])
+fie = np.array(model[JM.cellCount:])
+fae = 1 - fwe - fie - JM.fpm.fr
+rhoest = JM.fpm.rho(fwe)
+velest = 1. / JM.fpm.slowness(fwe, fie)
+np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
+         fa=np.array(fae), fi=np.array(fie), fw=np.array(fwe))

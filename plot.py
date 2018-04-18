@@ -14,11 +14,11 @@ seaborn.set(font="Fira Sans", style="ticks")
 plt.rcParams["image.cmap"] = "viridis"
 
 # Load data
-mesh = pg.load("brute/mesh.bms")
-meshj = pg.load("brute/paraDomain.bms")
+mesh = pg.load("mesh.bms")
+meshj = pg.load("paraDomain.bms")
 true = np.load("true_model.npz")
 est = np.load("conventional.npz")
-joint = np.load("brute/joint_inversion.npz")
+joint = np.load("joint_inversion.npz")
 sensors = np.load("sensors.npy")
 
 veltrue, rhotrue, fa, fi, fw = true["vel"], true["rho"], true["fa"], true["fi"], true["fw"]

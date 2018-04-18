@@ -44,7 +44,7 @@ class FourPhaseModel():
         self.m = m
         self.n = n
         self.phi = phi
-        self.fr = 1 - phi  # fraction of rock
+        self.fr = 1 - self.phi  # fraction of rock
         self.rhow = rhow
 
     def water(self, rho):
