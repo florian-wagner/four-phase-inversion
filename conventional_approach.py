@@ -9,6 +9,8 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
 
+pg.setThreadCount(8)
+
 # %%
 # Model creation
 world = mt.createWorld([0, -15], [117, 0], layers=[-5, -10], worldMarker=False)
@@ -49,21 +51,21 @@ ert = ERTManager()
 meshERT = mt.createParaMesh(ertScheme, quality=33, paraMaxCellSize=1.0, paraDX=0.2,
                             boundaryMaxCellSize=50, smooth=[1, 2], paraBoundary=30)
 
-# res = pg.RVector()
-# pg.interpolate(mesh, rhotrue, meshERT.cellCenters(), res)
-# res = mt.fillEmptyToCellArray(meshERT, res, slope=True)
-# # pg.show(meshERT, res)
-# ertData = ert.simulate(meshERT, res, ertScheme, noiseLevel=0.01, noiseAbs=0.0)
-# ertData.save("erttrue.dat")
-# ert.setData(ertData)
-# ert.setMesh(meshERT)
-# ert.inv.setData(ertData("rhoa"))
-# ert.fop.regionManager().setZWeight(0.5)
-# resinv = ert.invert(ertData, mesh=meshERT, lam=5, zWeight=0.5)
-# print("ERT chi:", ert.inv.chi2())
-# print("ERT rms:", ert.inv.relrms())
-# # resinv = ert.inv.runChi1()
-# rhoest = pg.interpolate(ert.paraDomain, resinv, mesh.cellCenters())
+res = pg.RVector()
+pg.interpolate(mesh, rhotrue, meshERT.cellCenters(), res)
+res = mt.fillEmptyToCellArray(meshERT, res, slope=True)
+# pg.show(meshERT, res)
+ertData = ert.simulate(meshERT, res, ertScheme, noiseLevel=0.01, noiseAbs=0.0)
+ertData.save("erttrue.dat")
+ert.setData(ertData)
+ert.setMesh(meshERT)
+ert.inv.setData(ertData("rhoa"))
+ert.fop.regionManager().setZWeight(0.5)
+resinv = ert.invert(ertData, mesh=meshERT, lam=5, zWeight=0.5)
+print("ERT chi:", ert.inv.chi2())
+print("ERT rms:", ert.inv.relrms())
+# resinv = ert.inv.runChi1()
+rhoest = pg.interpolate(ert.paraDomain, resinv, mesh.cellCenters())
 
 print("-Simulate refraction seismics" + "-" * 50)
 vel = pg.RVector()
@@ -79,7 +81,8 @@ rst.setData(ttData)
 rst.dataContainer.save("tttrue.dat")
 ttData = rst.dataContainer
 
-rst.createMesh(depth=15., paraMaxCellSize=1.)
+rst.createMesh(depth=15., paraMaxCellSize=1., quality=34, boundary=0, paraBoundary=3)
+rst.mesh.save("paraDomain.bms")
 rst.fop.regionManager().setZWeight(0.5)
 rst.inv.setData(ttData("s"))
 rst.inv.setMaxIter(50)

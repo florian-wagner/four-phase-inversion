@@ -114,7 +114,7 @@ for ax, title in zip(grid.axes_row[0],
     ax.set_title(title, fontweight="bold")
 
 for ax in grid.axes_all:
-    ax.plot(sensors, np.zeros_like(sensors), 'wv')
+    ax.plot(sensors, np.zeros_like(sensors), 'rv')
     ax.set_aspect(1.8)
 
 for row in grid.axes_row[:-1]:
