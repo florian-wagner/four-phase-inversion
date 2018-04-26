@@ -25,13 +25,14 @@ veltrue, rhotrue, fa, fi, fw = true["vel"], true["rho"], true["fa"], true["fi"],
 velest, rhoest, fae, fie, fwe = est["vel"], est["rho"], est["fa"], est["fi"], est["fw"]
 veljoint, rhojoint, faj, fij, fwj = joint["vel"], joint["rho"], joint["fa"], joint["fi"], joint["fw"]
 
-labels = ["$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$"]
+labels = ["$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$", "$\phi = f_a + f_i + f_w$"]
 long_labels = [
     "Velocity",
     "Resistivity",
     "Air content",
     "Ice content",
-    "Water content"
+    "Water content",
+    "Sum pore fractions"
 ]
 
 def add_inner_title(ax, title, loc, size=None, **kwargs):
@@ -75,7 +76,7 @@ def lim(data):
     return kwargs
 
 fig = plt.figure(figsize=(14, 14))
-grid = ImageGrid(fig, 111, nrows_ncols=(5, 3), axes_pad=0.15, share_all=True,
+grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.15, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.15, aspect=True)
 
@@ -109,6 +110,16 @@ im = draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues", **lim(f
 cb = fig.colorbar(im, cax=grid.cbar_axes[4])
 update_ticks(cb, label=labels[4])
 
+phi = fw + fa + fi
+phie = fwe + fae + fie
+phij = fwj + faj + fij
+
+im = draw(grid.axes_row[5][0], mesh, phi, logScale=False, cmap="Oranges", **lim(phi))
+im = draw(grid.axes_row[5][1], mesh, phie, logScale=False, cmap="Oranges", **lim(phi))
+im = draw(grid.axes_row[5][2], meshj, phij, logScale=False, cmap="Oranges", **lim(phi))
+cb = fig.colorbar(im, cax=grid.cbar_axes[5])
+update_ticks(cb, label=labels[5])
+
 for ax, title in zip(grid.axes_row[0],
                      ["True model", "Conventional inversion + 4PM", "Petrophysical joint inversion"]):
     ax.set_title(title, fontweight="bold")
@@ -134,4 +145,4 @@ for ax, label in zip(grid.axes_column[0], long_labels):
 fig.show()
 fig.savefig("4PM_joint_inversion.png", dpi=120)
 # fig.savefig("4PM_joint_inversion.pdf")
-# pg.wait()
+pg.wait()
