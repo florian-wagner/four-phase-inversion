@@ -77,21 +77,20 @@ class FourPhaseModel():
 
     def rho_deriv(self, fw):
         """Derivative d rho / d fw for Jacobian scaling."""
-        deriv = - self.n * self.rho(fw) * self.phi / fw
+        deriv = - self.n * self.rho(fw) / fw
         # deriv = -((self.rhow * self.a) / fw) * self.phi**(-self.m) * self.n * (
             # fw / self.phi)**(-self.n)
         # deriv = -(self.rhow * self.a) * self.phi**(-self.m) * self.n * (
             # fw / self.phi)**(-self.n-1)
         return deriv
 
-    def slowness(self, fw, fi):
+    def slowness(self, fw, fi, fa):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
-        fa = (1 - self.fr - fw - fi)
-        if (fa <= 0).any():
-            pg.warn("Found negative air content, setting to nearest above zero.")
-            fa[fa <= 0] = np.min(fa[fa >= 0])
-        s = fw / self.vw + self.fr / self.vr + fi / self.vi + (
-            1 - self.fr - fw - fi) / self.va
+        # fa = (1 - self.fr - fw - fi)
+        # if (fa <= 0).any():
+        #     pg.warn("Found negative air content, setting to nearest above zero.")
+        #     fa[fa <= 0] = np.min(fa[fa >= 0])
+        s = fw / self.vw + self.fr / self.vr + fi / self.vi + fa / self.va
         if (s <= 0).any():
             pg.warn("Found negative slowness, setting to nearest above zero.")
             s[s <= 0] = np.min(s[s >= 0])
