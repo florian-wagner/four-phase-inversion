@@ -1,11 +1,8 @@
 import os
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 
-import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 from petro import FourPhaseModel, testFourPhaseModel
