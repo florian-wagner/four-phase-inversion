@@ -114,9 +114,9 @@ phi = fw + fa + fi
 phie = fwe + fae + fie
 phij = fwj + faj + fij
 
-im = draw(grid.axes_row[5][0], mesh, phi, logScale=False, cmap="Oranges", **lim(phi))
-im = draw(grid.axes_row[5][1], mesh, phie, logScale=False, cmap="Oranges", **lim(phi))
-im = draw(grid.axes_row[5][2], meshj, phij, logScale=False, cmap="Oranges", **lim(phi))
+im = draw(grid.axes_row[5][0], mesh, phi, logScale=False, cmap="Oranges", cMin=0.3, cMax=0.5)
+im = draw(grid.axes_row[5][1], mesh, phie, logScale=False, cmap="Oranges",  cMin=0.3, cMax=0.5)
+im = draw(grid.axes_row[5][2], meshj, phij, logScale=False, cmap="Oranges",  cMin=0.3, cMax=0.5)
 cb = fig.colorbar(im, cax=grid.cbar_axes[5])
 update_ticks(cb, label=labels[5])
 

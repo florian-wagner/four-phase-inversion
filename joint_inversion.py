@@ -42,35 +42,36 @@ meshERT = mt.appendTriangleBoundary(meshRST, xbound=1000, ybound=500,
 pg.show(meshERT)
 
 fpm = FourPhaseModel()
-# fa, fi, fw, mask = fpm.all(rhotrue, veltrue)
-
-res = pg.RVector()
-pg.interpolate(mesh, rhotrue, meshRST.cellCenters(), res)
-
-vel = pg.RVector()
-pg.interpolate(mesh, veltrue, meshRST.cellCenters(), vel)
 
 ert = ERTManager()
 ert.setMesh(meshERT)
 ert.setData(ertScheme)
+ert.fop.createRefinedForwardMesh()
 
 ttData = pg.DataContainer("tttrue.dat")
 rst = Refraction("tttrue.dat", verbose=True)
 rst.setMesh(meshRST)
+rst.fop.createRefinedForwardMesh()
 
 
 class JointMod(pg.ModellingBase):
     def __init__(self, mesh, ertfop, rstfop, petromodel, verbose=True):
         pg.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
+        self.meshlist = []
 
-        # for i in range(2):
+        # for i in range(3):
+        #     self.meshlist.append(pg.Mesh(mesh))
+        #     mesh = self.meshlist[i]
         #     for cell in mesh.cells():
         #         cell.setMarker(i + 1)
         #
-        #     self.regionManager().addRegion(i + 1, self.mesh)
+        #     self.regionManager().addRegion(i + 1, mesh)
         #     # Set first order smoothing constraints
         #     self.regionManager().region(i + 1).setConstraintType(1)
+        # self.regionManager().setInterRegionConstraint(0,1,0.0)
+        # self.regionManager().setInterRegionConstraint(1,2,0.0)
+        # self.regionManager().setInterRegionConstraint(0,2,0.0)
 
         self.ERT = ertfop
         self.RST = rstfop
@@ -81,10 +82,11 @@ class JointMod(pg.ModellingBase):
 
     def createJacobian(self, model):
         fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:])
+        fi = np.array(model[self.cellCount:2 * self.cellCount])
+        fa = np.array(model[2 * self.cellCount:])
 
-        rho = self.fpm.rho(fw)
-        s = self.fpm.slowness(fw, fi)
+        rho = self.fpm.rho(fw, fi, fa)
+        s = self.fpm.slowness(fw, fi, fa)
 
         self.ERT.fop.createJacobian(rho)
         self.RST.fop.createJacobian(s)
@@ -92,24 +94,27 @@ class JointMod(pg.ModellingBase):
         jacERT = self.ERT.fop.jacobian()
         jacRST = self.RST.fop.jacobian()
 
+        # Setting inner derivatives
+        self.jacUL = pg.MultRightMatrix(jacRST,
+                                        r=1. / self.fpm.vw - 1. / self.fpm.vr)
+        self.jacUM = pg.MultRightMatrix(jacRST,
+                                        r=1. / self.fpm.vi - 1. / self.fpm.vr)
+        self.jacUR = pg.MultRightMatrix(jacRST,
+                                        r=1. / self.fpm.va - 1. / self.fpm.vr)
+        self.jacLL = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa))
+        self.jacLM = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fi_fa(fw, fi, fa))
+        self.jacLR = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fi_fa(fw, fi, fa))
+
+        # Putting subjacobians together in block matrix
         self.jac = pg.BlockMatrix()
         nData = 0
-
-        # Setting inner derivatives
-        # rUL = 1. / self.fpm.vw - 1./self.fpm.vr - 1. / self.fpm.va
-        # rUR = 1. / self.fpm.vi - 1./self.fpm.vr - 1. / self.fpm.va
-        rUL = 1. / self.fpm.vw - 1. / self.fpm.va
-        rUR = 1. / self.fpm.vi - 1. / self.fpm.va
-        rLL = self.fpm.rho_deriv(fw)
-
-        self.jacUL = pg.MultRightMatrix(jacRST, r=rUL)
-        self.jacUR = pg.MultRightMatrix(jacRST, r=rUR)
-        self.jacLL = pg.MultRightMatrix(jacERT, r=rLL)
-
         self.jac.addMatrix(self.jacUL, nData, 0)
-        self.jac.addMatrix(self.jacUR, nData, self.cellCount)
+        self.jac.addMatrix(self.jacUM, nData, self.cellCount)
+        self.jac.addMatrix(self.jacUR, nData, self.cellCount * 2)
         nData += self.RST.fop.data().size()  # update total vector length
         self.jac.addMatrix(self.jacLL, nData, 0)
+        self.jac.addMatrix(self.jacLM, nData, self.cellCount)
+        self.jac.addMatrix(self.jacLR, nData, self.cellCount * 2)
         self.setJacobian(self.jac)
 
     def createConstraints(self):
@@ -124,24 +129,29 @@ class JointMod(pg.ModellingBase):
         self._C = pg.RBlockMatrix()
         cid = self._C.addMatrix(self._Ctmp)
         self._C.addMatrixEntry(cid, 0, 0)
-        self._C.addMatrixEntry(cid, self._Ctmp.rows(), self._Ctmp.cols())
+        self._C.addMatrixEntry(cid, self._Ctmp.rows(), self.cellCount)
+        self._C.addMatrixEntry(cid, self._Ctmp.rows() * 2, self.cellCount * 2)
 
         iid = self._C.addMatrix(self._I)
-        self._C.addMatrixEntry(iid, self._Ctmp.rows() * 2, 0)
-        self._C.addMatrixEntry(iid, self._Ctmp.rows() * 2, self._I.cols())
+        self._C.addMatrixEntry(iid, self._Ctmp.rows() * 3, 0)
+        self._C.addMatrixEntry(iid, self._Ctmp.rows() * 3, self.cellCount)
+        self._C.addMatrixEntry(iid, self._Ctmp.rows() * 3, self.cellCount * 2)
         self.setConstraints(self._C)
 
     def showModel(self, model):
         fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:])
+        fi = np.array(model[self.cellCount:2 * self.cellCount])
+        fa = np.array(model[2 * self.cellCount:])
 
-        rho = self.fpm.rho(fw)
-        s = self.fpm.slowness(fw, fi)
+        rho = self.fpm.rho(fw, fi, fa)
+        s = self.fpm.slowness(fw, fi, fa)
 
-        fig, axs = plt.subplots(2, 2)
+        fig, axs = plt.subplots(3, 2)
         pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
                 logScale=False)
         pg.show(self.mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
+                logScale=False)
+        pg.show(self.mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
                 logScale=False)
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True)
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity", hold=True)
@@ -152,15 +162,19 @@ class JointMod(pg.ModellingBase):
     def response_mt(self, model, i=0):
         os.environ["OMP_THREAD_LIMIT"] = "1"
         fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:])
+        fi = np.array(model[self.cellCount:2 * self.cellCount])
+        fa = np.array(model[2 * self.cellCount:])
 
-        rho = self.fpm.rho(fw)
-        s = self.fpm.slowness(fw, fi)
+        rho = self.fpm.rho(fw, fi, fa)
+        s = self.fpm.slowness(fw, fi, fa)
 
-        fa = 1 - fw - fi - self.fpm.fr
+        print("=" * 60)
         print("Ice:", np.min(fi), np.max(fi))
         print("Water:", np.min(fw), np.max(fw))
         print("Air:", np.min(fa), np.max(fa))
+        print("=" * 60)
+        print("Porosity", np.min(fa + fw + fi), np.max(fa + fw + fi))
+        print("=" * 60)
         print("Rho:", np.min(rho), np.max(rho))
         print("Vel:", np.min(1 / s), np.max(1 / s))
 
@@ -202,7 +216,7 @@ inv.setLambda(80)
 inv.setLambdaFactor(0.8)
 
 # Set homogeneous starting model of f_ice, f_water, f_air = phi/3
-n = JM.cellCount * 2
+n = JM.cellCount * 3
 startmodel = pg.RVector(n, fpm.phi / 3.)
 
 # Set result of conventional inversion as starting model
@@ -210,20 +224,30 @@ icestart = pg.RVector()
 pg.interpolate(mesh, conventional["fi"], meshRST.cellCenters(), icestart)
 waterstart = pg.RVector()
 pg.interpolate(mesh, conventional["fw"], meshRST.cellCenters(), waterstart)
-startmodel = pg.cat(waterstart, icestart).array()
+airstart = pg.RVector()
+pg.interpolate(mesh, conventional["fa"], meshRST.cellCenters(), airstart)
+startmodel = pg.cat(pg.cat(waterstart, icestart), airstart).array()
 startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
 
 inv.setModel(startmodel)
 # Run inversion
-cH = pg.cat(pg.RVector(JM._Ctmp.rows() * 2, 0.0), pg.RVector(JM._I.rows(), fpm.phi))
-cW = pg.cat(pg.RVector(JM._Ctmp.rows() * 2, 1.0), pg.RVector(JM._I.rows(), 0.0))
-# cH = pg.RVector(JM._Ctmp.rows(), 0.0)
-# cW = pg.RVector(n * 2, 1.0)
+cH = pg.cat(pg.RVector(JM._Ctmp.rows() * 3, 0.0), pg.RVector(JM._I.rows(), fpm.phi))
+cW = pg.cat(pg.RVector(JM._Ctmp.rows() * 3, 1.0), pg.RVector(JM._I.rows(), 100.0))
 inv.fop().createConstraints()
 inv.setCWeight(cW)
 inv.setConstraintsH(cH)
+
+# min constraintsH = ndef. max constraintsH = ndef.
 model = inv.run()
 print("Chi squared fit:", inv.getChi2())
+
+# Sensitivity comparison
+# model = pg.load("with_fa/model_0.vector")
+# JM.createJacobian(model)
+# jac_num = pg.utils.gmat2numpy(pg.load("sens.bmat"))
+#
+# pg.show(meshRST, jac_num[400,JM.cellCount*2:], label="Sens", logScale=False)
+# pg.show(meshRST, JM.jacUR.A.row(400) * 0, label="Sens", logScale=False)
 
 # Some visualization and saving
 JM.showModel(model)
@@ -238,9 +262,10 @@ plt.axvline(ttData.size())
 
 # Save results
 fwe = np.array(model[:JM.cellCount])
-fie = np.array(model[JM.cellCount:])
-fae = 1 - fwe - fie - JM.fpm.fr
-rhoest = JM.fpm.rho(fwe)
-velest = 1. / JM.fpm.slowness(fwe, fie)
+fie = np.array(model[JM.cellCount:2 * JM.cellCount])
+fae = np.array(model[2 * JM.cellCount:])
+
+rhoest = JM.fpm.rho(fwe, fie, fae)
+velest = 1. / JM.fpm.slowness(fwe, fie, fae)
 np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
          fa=np.array(fae), fi=np.array(fie), fw=np.array(fwe))

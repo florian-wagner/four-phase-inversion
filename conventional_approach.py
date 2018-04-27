@@ -48,13 +48,15 @@ ertScheme = pb.createData(sensors, "dd")
 ert = ERTManager()
 
 # Create suitable mesh for ert forward calculation
-meshERT = mt.createParaMesh(ertScheme, quality=33, paraMaxCellSize=1.0, paraDX=0.2,
+meshERT = mt.createParaMesh(ertScheme, quality=33, paraMaxCellSize=1.0, paraDX=0.1,
                             boundaryMaxCellSize=50, smooth=[1, 2], paraBoundary=30)
 
 res = pg.RVector()
 pg.interpolate(mesh, rhotrue, meshERT.cellCenters(), res)
 res = mt.fillEmptyToCellArray(meshERT, res, slope=True)
 # pg.show(meshERT, res)
+ert.setMesh(meshERT)
+ert.fop.createRefinedForwardMesh()
 ertData = ert.simulate(meshERT, res, ertScheme, noiseLevel=0.01, noiseAbs=0.0)
 ertData.save("erttrue.dat")
 ert.setData(ertData)
@@ -75,20 +77,23 @@ vel = mt.fillEmptyToCellArray(meshERT, vel, slope=False)
 ttScheme = createRAData(sensors)
 rst = Refraction(verbose=True)
 # rst.useFMM(True)
+# rst.setMesh(meshERT)
+# rst.fop.createRefinedForwardMesh()
 ttData = rst.simulate(meshERT, 1. / vel, ttScheme, noisify=True, noiseLevel=0.001, noiseAbs=0.0001)
 
 rst.setData(ttData)
 rst.dataContainer.save("tttrue.dat")
 ttData = rst.dataContainer
 
-rst.createMesh(depth=15., paraMaxCellSize=1., quality=34, boundary=0, paraBoundary=3)
+rst.createMesh(depth=15., paraMaxCellSize=1., quality=33.5, boundary=0, smooth=[1,10],
+               paraDX=0.1, paraBoundary=3)
 rst.mesh.save("paraDomain.bms")
 rst.fop.regionManager().setZWeight(0.5)
 rst.inv.setData(ttData("s"))
 rst.inv.setMaxIter(50)
 # ttData.set("err", np.ones(len(ttData("s"))) * 0.001)
 # rst.inv.setRelativeError(0.001)
-vest = rst.invert(ttData, zWeight=0.8, lam=20, useGradient=True, vtop=1000, vbottom=4000)
+vest = rst.invert(ttData, zWeight=0.8, lam=15, useGradient=True, vtop=1000, vbottom=4000)
 # vest = rst.inv.runChi1()
 print("RST chi:", rst.inv.chi2())
 print("RST rms:", rst.inv.relrms())

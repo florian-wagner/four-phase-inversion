@@ -88,12 +88,8 @@ class FourPhaseModel():
     def rho_deriv_fw(self, fw, fi, fa):
         return ((-self.m + self.n)/(fw + fi +fa) - self.n/fw) * self.rho(fw, fi, fa)
 
-    def rho_deriv_fi(self, fw, fi, fa):
-        return ((-self.m + self.n)/fi) * self.rho(fw, fi, fa)
-
-    def rho_deriv_fa(self, fw, fi, fa):
-        return ((-self.m + self.n)/fa) * self.rho(fw, fi, fa)
-
+    def rho_deriv_fi_fa(self, fw, fi, fa):
+        return (-self.m + self.n)/(fi+fa+fw) * self.rho(fw, fi, fa)
 
     def slowness(self, fw, fi, fa):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
@@ -101,7 +97,7 @@ class FourPhaseModel():
         # if (fa <= 0).any():
         #     pg.warn("Found negative air content, setting to nearest above zero.")
         #     fa[fa <= 0] = np.min(fa[fa >= 0])
-        s = fw / self.vw + (1 - fa - fi - fw) / self.vr + fi / self.vi + fa / self.va
+        s = fw / self.vw + (fw + fi + fa) / self.vr + fi / self.vi + fa / self.va
         if (s <= 0).any():
             pg.warn("Found negative slowness, setting to nearest above zero.")
             s[s <= 0] = np.min(s[s >= 0])

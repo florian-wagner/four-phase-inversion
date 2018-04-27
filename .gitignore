@@ -1,4 +1,5 @@
 *.vector
+*.dat
 *.bms
 *.vtk
 *.bmat
