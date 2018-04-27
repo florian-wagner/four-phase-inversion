@@ -65,9 +65,10 @@ class FourPhaseModel():
         fa = 1 - self.fr - self.ice(rho, v) - self.water(rho)
         return fa
 
-    def rho(self, fw):
+    def rho(self, fw, fi, fa):
         """Return electrical resistivity based on fraction of water `fw`."""
-        rho = self.a * self.rhow * self.phi**(-self.m) * (fw / self.phi)**(
+        phi = fw + fi + fa
+        rho = self.a * self.rhow * phi**(-self.m) * (fw / phi)**(
             -self.n)
         if (rho <= 0).any():
             pg.warn(
@@ -75,14 +76,24 @@ class FourPhaseModel():
             rho[rho <= 0] = np.min(rho[rho >= 0])
         return rho
 
-    def rho_deriv(self, fw):
-        """Derivative d rho / d fw for Jacobian scaling."""
-        deriv = - self.n * self.rho(fw) / fw
-        # deriv = -((self.rhow * self.a) / fw) * self.phi**(-self.m) * self.n * (
-            # fw / self.phi)**(-self.n)
-        # deriv = -(self.rhow * self.a) * self.phi**(-self.m) * self.n * (
-            # fw / self.phi)**(-self.n-1)
-        return deriv
+    # def rho_deriv(self, fw, fi, fa):
+    #     """Derivative d rho / d fw for Jacobian scaling."""
+    #     deriv = - self.n * self.rho(fw, fi, fa) / fw
+    #     # deriv = -((self.rhow * self.a) / fw) * self.phi**(-self.m) * self.n * (
+    #         # fw / self.phi)**(-self.n)
+    #     # deriv = -(self.rhow * self.a) * self.phi**(-self.m) * self.n * (
+    #         # fw / self.phi)**(-self.n-1)
+    #     return deriv
+
+    def rho_deriv_fw(self, fw, fi, fa):
+        return ((-self.m + self.n)/(fw + fi +fa) - self.n/fw) * self.rho(fw, fi, fa)
+
+    def rho_deriv_fi(self, fw, fi, fa):
+        return ((-self.m + self.n)/fi) * self.rho(fw, fi, fa)
+
+    def rho_deriv_fa(self, fw, fi, fa):
+        return ((-self.m + self.n)/fa) * self.rho(fw, fi, fa)
+
 
     def slowness(self, fw, fi, fa):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
@@ -90,7 +101,7 @@ class FourPhaseModel():
         # if (fa <= 0).any():
         #     pg.warn("Found negative air content, setting to nearest above zero.")
         #     fa[fa <= 0] = np.min(fa[fa >= 0])
-        s = fw / self.vw + self.fr / self.vr + fi / self.vi + fa / self.va
+        s = fw / self.vw + (1 - fa - fi - fw) / self.vr + fi / self.vi + fa / self.va
         if (s <= 0).any():
             pg.warn("Found negative slowness, setting to nearest above zero.")
             s[s <= 0] = np.min(s[s >= 0])
