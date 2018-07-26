@@ -5,11 +5,11 @@ import numpy as np
 
 import pygimli as pg
 import pygimli.meshtools as mt
+from lsqrinversion import LSQRInversion
 from petro import FourPhaseModel
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
-from lsqrinversion import LSQRInversion
 # from pygimli.physics.traveltime import createRAData
 
 # Close open figures from previous run
@@ -63,13 +63,15 @@ class JointMod(pg.ModellingBase):
         self.cellCount = self.mesh.cellCount()
         self.createConstraints()
 
-    def createJacobian(self, model):
-        fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:2 * self.cellCount])
-        fa = np.array(model[2 * self.cellCount:])
+    def fractions(self, model):
+        """Split model vector into individual distributions"""
+        return np.reshape(model, (4, self.cellCount))
 
-        rho = self.fpm.rho(fw, fi, fa)
-        s = self.fpm.slowness(fw, fi, fa)
+    def createJacobian(self, model):
+        fw, fi, fa, fr = self.fractions(model)
+
+        rho = self.fpm.rho(fw, fi, fa, fr)
+        s = self.fpm.slowness(fw, fi, fa, fr)
 
         self.ERT.fop.createJacobian(rho)
         self.RST.fop.createJacobian(s)
@@ -78,29 +80,26 @@ class JointMod(pg.ModellingBase):
         jacRST = self.RST.fop.jacobian()
 
         # Setting inner derivatives
-        self.jacUL = pg.MultRightMatrix(jacRST,
-                                        r=1. / self.fpm.vw - 1. / self.fpm.vr)
-        self.jacUM = pg.MultRightMatrix(jacRST,
-                                        r=1. / self.fpm.vi - 1. / self.fpm.vr)
-        self.jacUR = pg.MultRightMatrix(jacRST,
-                                        r=1. / self.fpm.va - 1. / self.fpm.vr)
-        self.jacLL = pg.MultRightMatrix(jacERT,
-                                        r=self.fpm.rho_deriv_fw(fw, fi, fa))
-        self.jacLM = pg.MultRightMatrix(jacERT,
-                                        r=self.fpm.rho_deriv_fi_fa(fw, fi, fa))
-        self.jacLR = pg.MultRightMatrix(jacERT,
-                                        r=self.fpm.rho_deriv_fi_fa(fw, fi, fa))
+        self.jacRSTW = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vw)
+        self.jacRSTI = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vi)
+        self.jacRSTA = pg.MultRightMatrix(jacRST, r=1. / self.fpm.va)
+        self.jacRSTR = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
+
+        self.jacERTW = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fw(
+            fw, fi, fa, fr))
+        self.jacERTR = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fr(
+            fw, fi, fa, fr))
 
         # Putting subjacobians together in block matrix
         self.jac = pg.BlockMatrix()
         nData = 0
-        self.jac.addMatrix(self.jacUL, nData, 0)
-        self.jac.addMatrix(self.jacUM, nData, self.cellCount)
-        self.jac.addMatrix(self.jacUR, nData, self.cellCount * 2)
+        self.jac.addMatrix(self.jacRSTW, nData, 0)
+        self.jac.addMatrix(self.jacRSTI, nData, self.cellCount)
+        self.jac.addMatrix(self.jacRSTA, nData, self.cellCount * 2)
+        self.jac.addMatrix(self.jacRSTR, nData, self.cellCount * 3)
         nData += self.RST.fop.data().size()  # update total vector length
-        self.jac.addMatrix(self.jacLL, nData, 0)
-        self.jac.addMatrix(self.jacLM, nData, self.cellCount)
-        self.jac.addMatrix(self.jacLR, nData, self.cellCount * 2)
+        self.jac.addMatrix(self.jacERTW, nData, 0)
+        self.jac.addMatrix(self.jacERTR, nData, self.cellCount * 3)
         self.setJacobian(self.jac)
 
     def createConstraints(self):
@@ -121,6 +120,7 @@ class JointMod(pg.ModellingBase):
         self._C.addMatrixEntry(cid, 0, 0)
         self._C.addMatrixEntry(cid, self._Ctmp.rows(), self.cellCount)
         self._C.addMatrixEntry(cid, self._Ctmp.rows() * 2, self.cellCount * 2)
+        self._C.addMatrixEntry(cid, self._Ctmp.rows() * 3, self.cellCount * 3)
         self.setConstraints(self._C)
 
         self._G = pg.RBlockMatrix()
@@ -128,17 +128,15 @@ class JointMod(pg.ModellingBase):
         self._G.addMatrixEntry(iid, 0, 0)
         self._G.addMatrixEntry(iid, 0, self.cellCount)
         self._G.addMatrixEntry(iid, 0, self.cellCount * 2)
-#        self._G.addMatrixEntry(iid, self._Ctmp.rows() * 3, 0)
-#        self._G.addMatrixEntry(iid, self._Ctmp.rows() * 3, self.cellCount)
-#        self._G.addMatrixEntry(iid, self._Ctmp.rows() * 3, self.cellCount * 2)
+        self._G.addMatrixEntry(iid, 0, self.cellCount * 3)
+        # Fix f_r
+        self._G.addMatrixEntry(iid, self._G.rows(), self.cellCount * 3)
 
     def showModel(self, model):
-        fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:2 * self.cellCount])
-        fa = np.array(model[2 * self.cellCount:])
+        fw, fi, fa, fr = self.fractions(model)
 
-        rho = self.fpm.rho(fw, fi, fa)
-        s = self.fpm.slowness(fw, fi, fa)
+        rho = self.fpm.rho(fw, fi, fa, fr)
+        s = self.fpm.slowness(fw, fi, fa, fr)
 
         fig, axs = plt.subplots(3, 2)
         pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
@@ -155,19 +153,18 @@ class JointMod(pg.ModellingBase):
 
     def response_mt(self, model, i=0):
         os.environ["OMP_THREAD_LIMIT"] = "1"
-        fw = np.array(model[:self.cellCount])
-        fi = np.array(model[self.cellCount:2 * self.cellCount])
-        fa = np.array(model[2 * self.cellCount:])
+        fw, fi, fa, fr = self.fractions(model)
 
-        rho = self.fpm.rho(fw, fi, fa)
-        s = self.fpm.slowness(fw, fi, fa)
+        rho = self.fpm.rho(fw, fi, fa, fr)
+        s = self.fpm.slowness(fw, fi, fa, fr)
 
         print("=" * 60)
         print("Ice:", np.min(fi), np.max(fi))
         print("Water:", np.min(fw), np.max(fw))
         print("Air:", np.min(fa), np.max(fa))
+        print("Rock:", np.min(fr), np.max(fr))
         print("=" * 60)
-        print("Porosity", np.min(fa + fw + fi), np.max(fa + fw + fi))
+        print("SUM", np.min(fa + fw + fi + fr), np.max(fa + fw + fi + fr))
         print("=" * 60)
         print("Rho:", np.min(rho), np.max(rho))
         print("Vel:", np.min(1 / s), np.max(1 / s))
@@ -197,7 +194,7 @@ logtrans = pg.RTransLog()
 inv.setTransData(logtrans)
 
 # Set model transformation
-modtrans = pg.RTransLogLU(0, fpm.phi)
+modtrans = pg.RTransLogLU(0, 1)
 inv.setTransModel(modtrans)
 
 # Set error
@@ -218,19 +215,18 @@ n = JM.cellCount * 3
 startmodel = pg.RVector(n, fpm.phi / 3.)
 
 # Set result of conventional inversion as starting model
-icestart = pg.RVector()
-pg.interpolate(mesh, conventional["fi"], meshRST.cellCenters(), icestart)
-waterstart = pg.RVector()
-pg.interpolate(mesh, conventional["fw"], meshRST.cellCenters(), waterstart)
-airstart = pg.RVector()
-pg.interpolate(mesh, conventional["fa"], meshRST.cellCenters(), airstart)
-startmodel = pg.cat(pg.cat(waterstart, icestart), airstart).array()
+icestart = pg.interpolate(mesh, conventional["fi"], meshRST.cellCenters())
+waterstart = pg.interpolate(mesh, conventional["fw"], meshRST.cellCenters())
+airstart = pg.interpolate(mesh, conventional["fa"], meshRST.cellCenters())
+rockstart = np.ones_like(icestart) - fpm.phi
+startmodel = np.concatenate((icestart, waterstart, airstart, rockstart))
 startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
 
 inv.setModel(startmodel)
 # Run inversion
 inv.fop().createConstraints()
-phiVec = pg.RVector(JM._I.rows(), fpm.phi)
+phiVec = pg.cat(
+    pg.RVector(JM._I.rows(), 1.0), pg.RVector(JM._I.rows(), 1 - fpm.phi))
 inv.setParameterConstraints(JM._G, phiVec, 1000)
 #inv.setConstraintsH(cH)
 
@@ -258,13 +254,12 @@ plt.plot(fit, "r.")
 plt.axvline(ttData.size())
 
 # Save results
-fwe = np.array(model[:JM.cellCount])
-fie = np.array(model[JM.cellCount:2 * JM.cellCount])
-fae = np.array(model[2 * JM.cellCount:])
-fsum = fwe + fie + fae
+fwe, fie, fae, fre = JM.fractions(model)
+fsum = fwe + fie + fae + fre
+
 print("Min/Max sum:", min(fsum), max(fsum))
 
-rhoest = JM.fpm.rho(fwe, fie, fae)
-velest = 1. / JM.fpm.slowness(fwe, fie, fae)
+rhoest = JM.fpm.rho(fwe, fie, fae, fre)
+velest = 1. / JM.fpm.slowness(fwe, fie, fae, fre)
 np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
-         fa=np.array(fae), fi=np.array(fie), fw=np.array(fwe))
+         fa=fae, fi=fie, fw=fwe, fr=fre)

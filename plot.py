@@ -23,7 +23,7 @@ sensors = np.load("sensors.npy")
 
 veltrue, rhotrue, fa, fi, fw = true["vel"], true["rho"], true["fa"], true["fi"], true["fw"]
 velest, rhoest, fae, fie, fwe = est["vel"], est["rho"], est["fa"], est["fi"], est["fw"]
-veljoint, rhojoint, faj, fij, fwj = joint["vel"], joint["rho"], joint["fa"], joint["fi"], joint["fw"]
+veljoint, rhojoint, faj, fij, fwj, frj = joint["vel"], joint["rho"], joint["fa"], joint["fi"], joint["fw"], joint["fr"]
 
 labels = ["$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$", "$\phi = f_a + f_i + f_w$"]
 long_labels = [
@@ -177,7 +177,7 @@ update_ticks(cb, label=labels[4])
 
 phi = fw + fa + fi
 phie = fwe + fae + fie
-phij = fwj + faj + fij
+phij = 1 - frj
 
 im = draw(grid.axes_row[5][0], mesh, phi, logScale=False, cmap="Oranges", cMin=0.3, cMax=0.5)
 draw(grid.axes_row[5][1], mesh, phie, logScale=False, cmap="Oranges",  cMin=0.3, cMax=0.5, coverage=cov)
@@ -211,6 +211,6 @@ for ax, label in zip(grid.axes_column[0], long_labels):
     ax.set_ylabel("y (m)")
 
 fig.show()
-fig.savefig("4PM_joint_inversion.png", dpi=120)
-# fig.savefig("4PM_joint_inversion.pdf")
+fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
+fig.savefig("4PM_joint_inversion.pdf", bbox_inches="tight")
 pg.wait()
