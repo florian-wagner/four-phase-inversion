@@ -26,7 +26,7 @@ class LSQRInversion(pg.RInversion):
         for i in range(self.maxIter()):
             pg.boxprint("Iteration #%d" % i, width=80, sym="#")
             self.oneStep()
-            pg.boxprint((i, self.chi2(), self.relrms()))
+            pg.boxprint(("It:", i, "Chi2:", self.chi2(), "RMS", self.relrms()))
             if self.chi2() <= 1.0:
                 print("Done. Reached target data misfit of chi^2 <= 1.")
                 break
@@ -56,7 +56,8 @@ class LSQRInversion(pg.RInversion):
         self.A = pg.BlockMatrix()  # to be filled with scaled J and C matrices
         # part 1: data part
         J = self.forwardOperator().jacobian()
-        self.dScale = 1.0 / pg.log(self.error()+1.0)
+        # self.dScale = 1.0 / pg.log(self.error()+1.0)
+        self.dScale = 1.0/(tD.deriv(self.data())*self.error()*self.data())
         self.leftJ = tD.deriv(self.response()) * self.dScale
 #        self.leftJ = self.dScale / tD.deriv(self.response())
         self.rightJ = 1.0 / tM.deriv(model)
