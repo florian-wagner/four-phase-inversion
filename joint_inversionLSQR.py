@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 from lsqrinversion import LSQRInversion
@@ -35,9 +36,7 @@ meshRST = pg.load("paraDomain.bms")
 
 # meshRST.save("paraDomain.bms")
 
-meshERT = mt.appendTriangleBoundary(meshRST, xbound=1000, ybound=500,
-                                    smooth=True, quality=33.5,
-                                    isSubSurface=True)
+meshERT = pg.load("meshERT.bms")
 
 fpm = FourPhaseModel()
 
@@ -46,8 +45,8 @@ ert.setMesh(meshERT)
 ert.setData(ertScheme)
 ert.fop.createRefinedForwardMesh()
 
-ttData = pg.DataContainer("tttrue.dat")
 rst = Refraction("tttrue.dat", verbose=True)
+ttData = rst.dataContainer
 rst.setMesh(meshRST)
 rst.fop.createRefinedForwardMesh()
 
@@ -85,10 +84,10 @@ class JointMod(pg.ModellingBase):
         self.jacRSTA = pg.MultRightMatrix(jacRST, r=1. / self.fpm.va)
         self.jacRSTR = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
 
-        self.jacERTW = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fw(
-            fw, fi, fa, fr))
-        self.jacERTR = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fr(
-            fw, fi, fa, fr))
+        self.jacERTW = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
+        self.jacERTR = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
 
         # Putting subjacobians together in block matrix
         self.jac = pg.BlockMatrix()
@@ -140,13 +139,27 @@ class JointMod(pg.ModellingBase):
 
         fig, axs = plt.subplots(3, 2)
         pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
-                logScale=False)
+                logScale=False, cmap="Blues")
         pg.show(self.mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
-                logScale=False)
+                logScale=False, cmap="Purples")
         pg.show(self.mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
-                logScale=False)
-        pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True)
-        pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity", hold=True)
+                logScale=False, cmap="Greens")
+        pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True, cmap="Spectral_r")
+        pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")
+
+    def showFit(self, model):
+        resp = self.response(model)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        self.RST.showData(response=resp[:self.RST.dataContainer.size()],
+                          ax=ax1)
+        resprhoa = resp[self.RST.dataContainer.size():]
+
+        fit = (ert.data("rhoa") - resprhoa) / resprhoa * 100
+        lim = np.max(np.abs(fit))
+        pb.show(ert.data, vals=fit, cMin=-lim, cMax=lim, label="Relative fit",
+                cmap="RdBu_r", ax=ax2)
+        fig.show()
 
     def response(self, model):
         return self.response_mt(model)
@@ -159,8 +172,8 @@ class JointMod(pg.ModellingBase):
         s = self.fpm.slowness(fw, fi, fa, fr)
 
         print("=" * 60)
-        print("Ice:", np.min(fi), np.max(fi))
         print("Water:", np.min(fw), np.max(fw))
+        print("Ice:", np.min(fi), np.max(fi))
         print("Air:", np.min(fa), np.max(fa))
         print("Rock:", np.min(fr), np.max(fr))
         print("=" * 60)
@@ -186,11 +199,11 @@ inv = LSQRInversion(dtrue, JM, verbose=True, dosave=True)
 
 # Set data transformations
 logtrans = pg.RTransLog()
-# trans = pg.RTrans()
-# cumtrans = pg.RTransCumulative()
-# cumtrans.add(trans, ttData.size())
-# cumtrans.add(logtrans, ertScheme.size())
-# inv.setTransData(cumtrans)
+trans = pg.RTrans()
+cumtrans = pg.RTransCumulative()
+cumtrans.add(trans, ttData.size())
+cumtrans.add(logtrans, ertScheme.size())
+inv.setTransData(cumtrans)
 inv.setTransData(logtrans)
 
 # Set model transformation
@@ -210,48 +223,38 @@ inv.setDeltaPhiAbortPercent(1)
 # inv.setLambdaFactor(0.8)
 # inv.fop().regionManager().setZWeight(0.5)
 
-# Set homogeneous starting model of f_ice, f_water, f_air = phi/3
-n = JM.cellCount * 3
-startmodel = pg.RVector(n, fpm.phi / 3.)
+# Set gradient starting model of f_ice, f_water, f_air = phi/3
+velstart = np.loadtxt("rst_startmodel.dat")
+rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
+fas, fis, fws, _ = fpm.all(rhostart, velstart)
+startmodel = np.concatenate((fws, fis, fas, np.ones_like(fas) - fpm.phi))
 
 # Set result of conventional inversion as starting model
-icestart = pg.interpolate(mesh, conventional["fi"], meshRST.cellCenters())
-waterstart = pg.interpolate(mesh, conventional["fw"], meshRST.cellCenters())
-airstart = pg.interpolate(mesh, conventional["fa"], meshRST.cellCenters())
-rockstart = np.ones_like(icestart) - fpm.phi
-startmodel = np.concatenate((icestart, waterstart, airstart, rockstart))
-startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
+# rockstart = np.ones_like(conventional["fi"]) - fpm.phi
+# startmodel = np.concatenate((conventional["fw"], conventional["fi"], conventional["fa"], rockstart))
 
+startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
 inv.setModel(startmodel)
 # Run inversion
 inv.fop().createConstraints()
-phiVec = pg.cat(
-    pg.RVector(JM._I.rows(), 1.0), pg.RVector(JM._I.rows(), 1 - fpm.phi))
-inv.setParameterConstraints(JM._G, phiVec, 1000)
+ones = pg.RVector(JM._I.rows(), 1.0)
+phiVec = pg.cat(ones, ones - fpm.phi)
+inv.setParameterConstraints(JM._G, phiVec, 10000)
 #inv.setConstraintsH(cH)
 
-# min constraintsH = ndef. max constraintsH = ndef.
+# Some visualization and saving
+JM.showModel(startmodel)
+JM.showFit(startmodel)
+# pg.wait()
+# 1/0
+
 model = inv.run()
 print("Chi squared fit:", inv.getChi2())
-
-# Sensitivity comparison
-# model = pg.load("with_fa/model_0.vector")
-# JM.createJacobian(model)
-# jac_num = pg.utils.gmat2numpy(pg.load("sens.bmat"))
-#
-# pg.show(meshRST, jac_num[400,JM.cellCount*2:], label="Sens", logScale=False)
-# pg.show(meshRST, JM.jacUR.A.row(400) * 0, label="Sens", logScale=False)
-
-# Some visualization and saving
 JM.showModel(model)
 
-np.savetxt("model_iter%d.dat" % inv.iter(), model)
 
-resp = JM(model)
-fit = (resp - dtrue) / dtrue
-plt.figure()
-plt.plot(fit, "r.")
-plt.axvline(ttData.size())
+
+np.savetxt("model_iter%d.dat" % inv.iter(), model)
 
 # Save results
 fwe, fie, fae, fre = JM.fractions(model)

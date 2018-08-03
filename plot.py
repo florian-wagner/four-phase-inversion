@@ -223,7 +223,7 @@ for ax, title in zip(grid.axes_row[0], [
 ]):
     ax.set_title(title, fontweight="bold")
 
-for ax in grid.axes_column[1]:
+for ax in grid.axes_column[1][2:]:
     # Mask unphysical values
     draw(ax, meshj, est["mask"], coverage=est["mask"], logScale=False, cmap="hsv")
 
