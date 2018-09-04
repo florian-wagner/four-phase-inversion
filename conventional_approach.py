@@ -11,8 +11,6 @@ from pygimli.physics.traveltime import createRAData
 
 # matplotlib.use("Agg")
 
-pg.setThreadCount(8)
-
 # %%
 # Model creation
 world = mt.createWorld([0, -15], [117, 0], layers=[-5, -10], worldMarker=False)

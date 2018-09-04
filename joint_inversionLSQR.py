@@ -16,9 +16,6 @@ from pygimli.physics import Refraction
 # Close open figures from previous run
 plt.close("all")
 
-# Use 8 CPUs
-pg.setThreadCount(4)
-
 mesh = pg.load("mesh.bms")
 true = np.load("true_model.npz")
 conventional = np.load("conventional.npz")
