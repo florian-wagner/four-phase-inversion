@@ -2,7 +2,7 @@ from math import sqrt
 import numpy as np
 import pygimli as pg
 
-from mylsqr import lsqr
+from .mylsqr import lsqr
 
 
 class LSQRInversion(pg.RInversion):
