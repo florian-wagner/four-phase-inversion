@@ -1,5 +1,5 @@
 clean:
-	rm -rf *.bmat *.npy *.npz *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
+	rm -rf *.bmat *.png *.npy *.npz *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
 
 calc:
 	python ./1_create_model.py
@@ -11,6 +11,5 @@ inv:
 
 show:
 	python ./5_plot_results.py
-	xdg-open 4PM_joint_inversion.png
 
 all: clean calc inv show

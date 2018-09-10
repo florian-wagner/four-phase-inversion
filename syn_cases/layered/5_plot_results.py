@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn
 from matplotlib import ticker
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.path import Path
@@ -8,8 +7,8 @@ from matplotlib.patheffects import withStroke
 from mpl_toolkits.axes_grid1 import ImageGrid
 from scipy.spatial import ConvexHull
 
-import pybert as pb
 import pygimli as pg
+import seaborn
 from pygimli.mplviewer import addCoverageAlpha, drawModel
 
 seaborn.set(font="Fira Sans", style="ticks")
@@ -59,21 +58,22 @@ def add_inner_title(ax, title, loc, size=None, **kwargs):
     at.patch.set_alpha(0.5)
     return at
 
+
 def update_ticks(cb, log=False, label=""):
     if log:
         t = ticker.LogLocator(numticks=2)
     else:
         t = ticker.LinearLocator(numticks=2)
-    cb.ax.annotate(label,
-                xy=(1, 0.5), xycoords='axes fraction',
-                xytext=(80, 0), textcoords='offset pixels',
-                horizontalalignment='center',
-                verticalalignment='center', rotation=90)
+    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(80,
+                                                                         0),
+                   textcoords='offset pixels', horizontalalignment='center',
+                   verticalalignment='center', rotation=90)
     cb.set_ticks(t)
     cb.update_ticks()
     ticks = cb.get_clim()
     if not log and ticks[1] < 1:
         cb.ax.set_yticklabels(['{:.2f}'.format(tick) for tick in ticks])
+
 
 def lim(data):
     dmin = np.around(data.min(), 2)
@@ -81,12 +81,10 @@ def lim(data):
     print(dmin, dmax)
     if dmin < 0.02:
         dmin = 0
-    kwargs = {
-        "cMin": dmin,
-        "cMax": dmax
-    }
+    kwargs = {"cMin": dmin, "cMax": dmax}
     print(dmin, dmax)
     return kwargs
+
 
 fig = plt.figure(figsize=(14, 14))
 grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.15, share_all=True,
@@ -100,7 +98,6 @@ rst_cov = np.loadtxt("rst_coverage.dat")
 # rst_cov = pg.interpolate(mesh, rst_cov, meshj.cellCenters()).array()
 
 # Extract convex hull
-
 
 points_all = np.column_stack((
     pg.x(meshj.cellCenters()),
@@ -126,8 +123,8 @@ def joint_cov(ert_cov, rst_cov, mesh):
     ))
     cov = np.array(ert_cov)
     for cell in mesh.cells():
-        if hull_path.contains_point(points_all[cell.id()]):
-            cov[cell.id()] += np.max(covs)
+        if not hull_path.contains_point(points_all[cell.id()]):
+            cov[cell.id()] = np.min(covs) * 10
 
     return cov
 
@@ -225,7 +222,8 @@ for ax, title in zip(grid.axes_row[0], [
 
 for ax in grid.axes_column[1][2:]:
     # Mask unphysical values
-    draw(ax, meshj, est["mask"], coverage=est["mask"], logScale=False, cmap="hsv")
+    draw(ax, meshj, est["mask"], coverage=est["mask"], logScale=False,
+         cmap="hsv")
 
 for ax in grid.axes_all:
     ax.set_facecolor("0.5")
@@ -238,8 +236,6 @@ for row in grid.axes_row[:-1]:
 
 for ax in grid.axes_column[-1]:
     ax.yaxis.set_visible(False)
-
-
 
 for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)")

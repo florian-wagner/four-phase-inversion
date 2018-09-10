@@ -1,5 +1,7 @@
 from math import sqrt
+
 import numpy as np
+
 import pygimli as pg
 
 from .mylsqr import lsqr
@@ -7,6 +9,7 @@ from .mylsqr import lsqr
 
 class LSQRInversion(pg.RInversion):
     """LSQR solver based inversion"""
+
     def __init__(self, *args, **kwargs):
         """Init."""
         pg.RInversion.__init__(self, *args, **kwargs)
@@ -33,10 +36,12 @@ class LSQRInversion(pg.RInversion):
             phi = self.getPhi()
             if i > 2:
                 print("Phi / oldphi", phi / oldphi)
-            if (i > 10) and (phi / oldphi > (1 - self.deltaPhiAbortPercent()/100)):
-                print("Done. Reached data fit criteria of delta phi < %.2f%%." % self.deltaPhiAbortPercent())
+            if (i > 10) and (phi / oldphi >
+                             (1 - self.deltaPhiAbortPercent() / 100)):
+                print("Done. Reached data fit criteria of delta phi < %.2f%%."
+                      % self.deltaPhiAbortPercent())
                 break
-            if i  + 1 == self.maxIter():
+            if i + 1 == self.maxIter():
                 print("Done. Maximum number of iterations reached.")
             oldphi = phi
         return self.model()
@@ -52,17 +57,17 @@ class LSQRInversion(pg.RInversion):
         tD = self.transData()
         tM = self.transModel()
         nData = self.data().size()
-#        nModel = len(model)
+        #        nModel = len(model)
         self.A = pg.BlockMatrix()  # to be filled with scaled J and C matrices
         # part 1: data part
         J = self.forwardOperator().jacobian()
         # self.dScale = 1.0 / pg.log(self.error()+1.0)
-        self.dScale = 1.0/(tD.deriv(self.data())*self.error()*self.data())
+        self.dScale = 1.0 / (tD.deriv(self.data()) * self.error() * self.data())
         self.leftJ = tD.deriv(self.response()) * self.dScale
-#        self.leftJ = self.dScale / tD.deriv(self.response())
+        #        self.leftJ = self.dScale / tD.deriv(self.response())
         self.rightJ = 1.0 / tM.deriv(model)
         self.JJ = pg.matrix.MultLeftRightMatrix(J, self.leftJ, self.rightJ)
-#        self.A.addMatrix(self.JJ, 0, 0)
+        #        self.A.addMatrix(self.JJ, 0, 0)
         self.mat1 = self.A.addMatrix(self.JJ)
         self.A.addMatrixEntry(self.mat1, 0, 0)
         # part 2: normal constraints
@@ -70,8 +75,8 @@ class LSQRInversion(pg.RInversion):
         self.C = self.forwardOperator().constraints()
         self.leftC = pg.RVector(self.C.rows(), 1.0)
         self.rightC = pg.RVector(self.C.cols(), 1.0)
-        self.CC = pg.matrix.MultLeftRightMatrix(self.C,
-                                                self.leftC, self.rightC)
+        self.CC = pg.matrix.MultLeftRightMatrix(self.C, self.leftC,
+                                                self.rightC)
         self.mat2 = self.A.addMatrix(self.CC)
         lam = self.getLambda()
         self.A.addMatrixEntry(self.mat2, nData, 0, sqrt(lam))
@@ -81,11 +86,10 @@ class LSQRInversion(pg.RInversion):
             self.GG = pg.matrix.MultRightMatrix(self.G, self.rightG)
             self.mat3 = self.A.addMatrix(self.GG)
             nConst = self.C.rows()
-            self.A.addMatrixEntry(self.mat3, nData+nConst, 0, sqrt(self.my))
-
+            self.A.addMatrixEntry(self.mat3, nData + nConst, 0, sqrt(self.my))
         self.A.recalcMatrixSize()
         # right-hand side vector
-        deltaD = (tD.fwd(self.data())-tD.fwd(self.response())) * self.dScale
+        deltaD = (tD.fwd(self.data()) - tD.fwd(self.response())) * self.dScale
         deltaC = -(self.CC * tM.fwd(model) * sqrt(lam))
         deltaC *= 1.0 - self.localRegularization()  # operates on DeltaM only
         rhs = pg.cat(deltaD, deltaC)
@@ -105,14 +109,14 @@ class LSQRInversion(pg.RInversion):
         if tau < 0.1:  # still not working
             tau = 0.1  # tra a small value
 
-        self.setModel(tM.update(self.model(), dM*tau))
+        self.setModel(tM.update(self.model(), dM * tau))
         # print("model", min(self.model()), max(self.model()))
         if tau == 1.0:
             self.setResponse(responseLS)
         else:  # compute new response
             self.setResponse(self.forwardOperator().response(self.model()))
 
-        self.setLambda(self.getLambda()*self.lambdaFactor())
+        self.setLambda(self.getLambda() * self.lambdaFactor())
         return True
 
     def lineSearchInter(self, dM, nTau=100):
@@ -128,10 +132,10 @@ class LSQRInversion(pg.RInversion):
         phi[-1] = self.getPhi(modelLS, responseLS)
         t0 = tD.fwd(response)
         t1 = tD.fwd(responseLS)
-        for i in range(1, len(taus)-1):
+        for i in range(1, len(taus) - 1):
             tau = taus[i]
-            modelI = tM.update(model, dM*tau)
-            responseI = tD.inv(t1*tau+t0*(1.0-tau))
+            modelI = tM.update(model, dM * tau)
+            responseI = tD.inv(t1 * tau + t0 * (1.0 - tau))
             phi[i] = self.getPhi(modelI, responseI)
 
         pg.plt.plot(phi)
@@ -151,12 +155,13 @@ if __name__ == '__main__':
     f = pg.DC1dModelling(nlay, ab2, mn2)
     synres = [100., 500., 20., 800.]  # synthetic resistivity
     synthk = [0.5, 3.5, 6.]  # synthetic thickness (nlay-th layer is infinite)
-    rhoa = f(synthk+synres)
+    rhoa = f(synthk + synres)
     rhoa = rhoa * (pg.randn(len(rhoa)) * errPerc / 100. + 1.)
     transLog = pg.RTransLog()
     inv = LSQRInversion(rhoa, f, transLog, transLog, True)
-    inv.setRelativeError(errPerc/100)
-    startModel = pg.cat(pg.Vector(nlay-1, 5), pg.Vector(nlay, pg.median(rhoa)))
+    inv.setRelativeError(errPerc / 100)
+    startModel = pg.cat(
+        pg.Vector(nlay - 1, 5), pg.Vector(nlay, pg.median(rhoa)))
     print(inv.response())
     inv.setModel(startModel)
     inv.setMarquardtScheme()
@@ -170,7 +175,7 @@ if __name__ == '__main__':
     if 0:
         for i in range(10):
             inv.oneStep()
-            print(i, inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay-1)))
+            print(i, inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay - 1)))
     else:
         inv.run()
-        print(inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay-1)))
+        print(inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay - 1)))

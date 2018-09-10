@@ -4,7 +4,6 @@ import sys, os
 sys.path.insert(0, os.path.abspath("../.."))
 #############################################
 
-import matplotlib
 import numpy as np
 
 import pybert as pb
@@ -14,7 +13,6 @@ import pygimli.meshtools as mt
 from invlib import FourPhaseModel
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
-from pygimli.physics.traveltime import createRAData
 
 ertData = pb.load("erttrue.dat")
 
@@ -29,6 +27,7 @@ meshRST.save("paraDomain.bms")
 #                             paraBoundary=3)
 meshERT = mt.appendTriangleBoundary(meshRST, xbound=500, ybound=500,
                                     quality=33.5, isSubSurface=True)
+meshERT.save("meshERT.bms")
 
 ert = ERTManager()
 # CM = pg.utils.geostatistics.covarianceMatrix(ert.paraDomain, I=[40, 3])
