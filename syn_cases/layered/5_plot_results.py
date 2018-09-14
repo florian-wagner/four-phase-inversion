@@ -1,5 +1,8 @@
+from copy import copy
+
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn
 from matplotlib import ticker
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.path import Path
@@ -8,7 +11,6 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 from scipy.spatial import ConvexHull
 
 import pygimli as pg
-import seaborn
 from pygimli.mplviewer import addCoverageAlpha, drawModel
 
 seaborn.set(font="Fira Sans", style="ticks")
@@ -23,8 +25,8 @@ joint = np.load("joint_inversion.npz")
 sensors = np.load("sensors.npy")
 
 # True model
-veltrue, rhotrue, fa, fi, fw = true["vel"], true["rho"], true["fa"], true[
-    "fi"], true["fw"]
+veltrue, rhotrue, fa, fi, fw, fr = true["vel"], true["rho"], true["fa"], true[
+    "fi"], true["fw"], true["fr"]
 
 # Conventional inversion
 velest, rhoest, fae, fie, fwe, mask = est["vel"], est["rho"], est["fa"], est[
@@ -34,22 +36,23 @@ velest, rhoest, fae, fie, fwe, mask = est["vel"], est["rho"], est["fa"], est[
 # fwe = np.ma.array(fwe, mask=est["mask"])
 
 # Joint inversion
-veljoint, rhojoint, faj, fij, fwj, frj = joint["vel"], joint["rho"], joint[
-    "fa"], joint["fi"], joint["fw"], joint["fr"]
+veljoint, rhojoint, faj, fij, fwj, frj, maskj = joint["vel"], joint[
+    "rho"], joint["fa"], joint["fi"], joint["fw"], joint["fr"], joint["mask"]
 
 labels = [
-    "$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$",
-    "$\phi = f_a + f_i + f_w$"
+    "$v$ (m/s)", r"$\rho$ ($\Omega$m)", "$f_a$", "$f_i$", "$f_w$", "$f_r$"
 ]
 long_labels = [
     "Velocity", "Resistivity", "Air content", "Ice content", "Water content",
-    "Sum pore fractions"
+    "Rock content"
 ]
 
 
 def add_inner_title(ax, title, loc, size=None, **kwargs):
     if size is None:
         size = dict(size=plt.rcParams['legend.fontsize'])
+    else:
+        size = dict(size=size)
     at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
                       frameon=False, **kwargs)
     ax.add_artist(at)
@@ -76,6 +79,7 @@ def update_ticks(cb, log=False, label=""):
 
 
 def lim(data):
+    data = np.array(data)
     dmin = np.around(data.min(), 2)
     dmax = np.around(data.max(), 2)
     print(dmin, dmax)
@@ -86,7 +90,7 @@ def lim(data):
     return kwargs
 
 
-fig = plt.figure(figsize=(14, 14))
+fig = plt.figure(figsize=(18, 18))
 grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.15, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.15, aspect=True)
@@ -121,15 +125,16 @@ def joint_cov(ert_cov, rst_cov, mesh):
         pg.x(mesh.cellCenters()),
         pg.y(mesh.cellCenters()),
     ))
-    cov = np.array(ert_cov)
+    cov = np.zeros_like(ert_cov)
     for cell in mesh.cells():
-        if not hull_path.contains_point(points_all[cell.id()]):
-            cov[cell.id()] = np.min(covs) * 10
+        if hull_path.contains_point(points_all[cell.id()]):
+            cov[cell.id()] = 1
+        else:
+            cov[cell.id()] = 0
 
     return cov
 
 
-# cov = joint_cov(ert_cov, rst_cov, meshj)
 cov = joint_cov(ert_cov, rst_cov, meshj)
 
 # for cell in mesh.cells():
@@ -142,10 +147,20 @@ cov = joint_cov(ert_cov, rst_cov, meshj)
 
 
 def draw(ax, mesh, model, **kwargs):
-    gci = drawModel(ax, mesh, model, **kwargs)
+    model = np.array(model)
+    if (model < 0).any():
+        model = np.ma.masked_where(model < 0, model)
+        # model[model < 0] = -99
+        # palette = copy(plt.get_cmap(kwargs["cmap"]))
+        # palette.set_under('r', 1)
+        # kwargs["cmap"] = palette
+
     if "coverage" in kwargs:
-        addCoverageAlpha(gci, kwargs["coverage"])
-        pass
+        model = np.ma.masked_where(kwargs["coverage"] == 0, model)
+
+    gci = drawModel(ax, mesh, model, rasterized=True, **kwargs)
+    # if "coverage" in kwargs:
+    #     addCoverageAlpha(gci, kwargs["coverage"])
 
     # for simplex in hull.simplices:
     #     x = points[simplex, 0]
@@ -156,61 +171,98 @@ def draw(ax, mesh, model, **kwargs):
     return gci
 
 
-im = draw(grid.axes_row[0][0], mesh, veltrue, cmap="viridis", **lim(veltrue),
+def eps(inv, true):
+    # true_int = pg.interpolate(mesh, true, meshj.cellCenters()).array()
+
+    # a = []
+    # b = []
+    #
+    # points_all = np.column_stack((
+    #     pg.x(meshj.cellCenters()),
+    #     pg.y(meshj.cellCenters()),
+    # ))
+    #
+    # for cell in meshj.cells():
+    #     if hull_path.contains_point(points_all[cell.id()]):
+    #         a.append(true_int[cell.id()])
+    #         b.append(inv[cell.id()])
+
+    # return r"$\epsilon$ = %.2f" % pg.rms(a, b)
+    return "min: %.2f / max: %.2f" % (min(inv), max(inv))
+
+
+fre = 1 - fwe - fae - fie
+
+allvel = list(veltrue) + list(velest) + list(veljoint)
+allrho = list(rhotrue) + list(rhoest) + list(rhojoint)
+allfa = list(fa) + list(fae) + list(faj)
+allfw = list(fw) + list(fwe) + list(fwj)
+allfi = list(fi) + list(fie) + list(fij)
+allfr = list(fr) + list(fre) + list(frj)
+
+im = draw(grid.axes_row[0][0], mesh, veltrue, cmap="viridis", **lim(allvel),
           logScale=False)
-draw(grid.axes_row[0][1], meshj, velest, cmap="viridis", **lim(veltrue),
+draw(grid.axes_row[0][1], meshj, velest, cmap="viridis", **lim(allvel),
      logScale=False, coverage=cov)
-draw(grid.axes_row[0][2], meshj, veljoint, cmap="viridis", **lim(veltrue),
+draw(grid.axes_row[0][2], meshj, veljoint, cmap="viridis", **lim(allvel),
      logScale=False, coverage=cov)
 cb = fig.colorbar(im, cax=grid.cbar_axes[0])
 update_ticks(cb, label=labels[0])
 
-im = draw(grid.axes_row[1][0], mesh, rhotrue, cmap="Spectral_r",
-          **lim(rhotrue), logScale=True)
-draw(grid.axes_row[1][1], meshj, rhoest, cmap="Spectral_r", **lim(rhotrue),
+im = draw(grid.axes_row[1][0], mesh, rhotrue, cmap="Spectral_r", **lim(allrho),
+          logScale=True)
+draw(grid.axes_row[1][1], meshj, rhoest, cmap="Spectral_r", **lim(allrho),
      logScale=True, coverage=cov)
-draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(rhotrue),
+draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(allrho),
      logScale=True, coverage=cov)
 cb = fig.colorbar(im, cax=grid.cbar_axes[1])
 update_ticks(cb, log=True, label=labels[1])
 
 im = draw(grid.axes_row[2][0], mesh, fa, logScale=False, cmap="Greens",
-          **lim(fa))
-draw(grid.axes_row[2][1], meshj, fae, logScale=False, cmap="Greens", **lim(fa),
-     coverage=cov)
-draw(grid.axes_row[2][2], meshj, faj, logScale=False, cmap="Greens", **lim(fa),
-     coverage=cov)
+          **lim(allfa))
+add_inner_title(grid.axes_row[2][0], eps(fa, fa), loc=4, size=8)
+draw(grid.axes_row[2][1], meshj, fae, logScale=False, cmap="Greens",
+     **lim(allfa), coverage=cov)
+add_inner_title(grid.axes_row[2][1], eps(fae, fa), loc=4, size=8)
+draw(grid.axes_row[2][2], meshj, faj, logScale=False, cmap="Greens",
+     **lim(allfa), coverage=cov)
+add_inner_title(grid.axes_row[2][2], eps(faj, fa), loc=4, size=8)
 cb = fig.colorbar(im, cax=grid.cbar_axes[2])
 update_ticks(cb, label=labels[2])
 
 im = draw(grid.axes_row[3][0], mesh, fi, logScale=False, cmap="Purples",
-          **lim(fi))
+          **lim(allfi))
+add_inner_title(grid.axes_row[3][0], eps(fi, fi), loc=4, size=8)
 draw(grid.axes_row[3][1], meshj, fie, logScale=False, cmap="Purples",
-     **lim(fi), coverage=cov)
+     **lim(allfi), coverage=cov)
+add_inner_title(grid.axes_row[3][1], eps(fie, fi), loc=4, size=8)
 draw(grid.axes_row[3][2], meshj, fij, logScale=False, cmap="Purples",
-     **lim(fi), coverage=cov)
+     **lim(allfi), coverage=cov)
+add_inner_title(grid.axes_row[3][2], eps(fij, fi), loc=4, size=8)
 cb = fig.colorbar(im, cax=grid.cbar_axes[3])
 update_ticks(cb, label=labels[3])
 
 im = draw(grid.axes_row[4][0], mesh, fw, logScale=False, cmap="Blues",
-          **lim(fw))
-draw(grid.axes_row[4][1], meshj, fwe, logScale=False, cmap="Blues", **lim(fw),
-     coverage=cov)
-draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues", **lim(fw),
-     coverage=cov)
+          **lim(allfw))
+add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, size=8)
+draw(grid.axes_row[4][1], meshj, fwe, logScale=False, cmap="Blues",
+     **lim(allfw), coverage=cov)
+add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, size=8)
+draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues",
+     **lim(allfw), coverage=cov)
+add_inner_title(grid.axes_row[4][2], eps(fwj, fw), loc=4, size=8)
 cb = fig.colorbar(im, cax=grid.cbar_axes[4])
 update_ticks(cb, label=labels[4])
 
-phi = fw + fa + fi
-phie = fwe + fae + fie
-phij = 1 - frj
-
-im = draw(grid.axes_row[5][0], mesh, phi, logScale=False, cmap="Oranges",
-          cMin=0.3, cMax=0.5)
-draw(grid.axes_row[5][1], meshj, phie, logScale=False, cmap="Oranges",
-     cMin=0.3, cMax=0.5, coverage=cov)
-draw(grid.axes_row[5][2], meshj, phij, logScale=False, cmap="Oranges",
-     cMin=0.3, cMax=0.5, coverage=cov)
+im = draw(grid.axes_row[5][0], mesh, fr, logScale=False, cmap="Oranges",
+          **lim(allfr))
+add_inner_title(grid.axes_row[5][0], eps(fr, fr), loc=4, size=8)
+draw(grid.axes_row[5][1], meshj, fre, logScale=False, cmap="Oranges",
+     **lim(allfr), coverage=cov)
+add_inner_title(grid.axes_row[5][1], eps(fre, fr), loc=4, size=8)
+draw(grid.axes_row[5][2], meshj, frj, logScale=False, cmap="Oranges",
+     **lim(allfr), coverage=cov)
+add_inner_title(grid.axes_row[5][2], eps(frj, fr), loc=4, size=8)
 cb = fig.colorbar(im, cax=grid.cbar_axes[5])
 update_ticks(cb, label=labels[5])
 
@@ -220,15 +272,24 @@ for ax, title in zip(grid.axes_row[0], [
 ]):
     ax.set_title(title, fontweight="bold")
 
-for ax in grid.axes_column[1][2:]:
-    # Mask unphysical values
-    draw(ax, meshj, est["mask"], coverage=est["mask"], logScale=False,
-         cmap="hsv")
+labs = ["inverted", "inverted", "transformed", "transformed", "transformed", "assumed"]
+for ax, lab in zip(grid.axes_column[1], labs):
+    add_inner_title(ax, lab, loc=3, size=8)
+
+labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "inverted"]
+for ax, lab in zip(grid.axes_column[2], labs):
+    add_inner_title(ax, lab, loc=3, size=8)
+# for ax in grid.axes_column[2][2:]:
+
+#     pass
+# Mask unphysical values
+# draw(ax, meshj, joint["mask"], coverage=joint["mask"], logScale=False,
+#      cmap="gray_r")
 
 for ax in grid.axes_all:
     ax.set_facecolor("0.5")
     ax.plot(sensors, np.zeros_like(sensors), 'rv')
-    ax.set_aspect(1.8)
+    # ax.set_aspect(1.4)
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -244,7 +305,12 @@ for ax, label in zip(grid.axes_column[0], long_labels):
     add_inner_title(ax, label, loc=3)
     ax.set_ylabel("y (m)")
 
+# for ax in grid.axes_column[1][2:]:
+#     # Mask unphysical values
+#     im = draw(ax, meshj, est["mask"], coverage=cov, logScale=False,
+#          cmap="gray_r", grid=False)
+
 fig.show()
-fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
-# fig.savefig("4PM_joint_inversion.pdf", bbox_inches="tight")
-pg.wait()
+# fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
+fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
+# pg.wait()

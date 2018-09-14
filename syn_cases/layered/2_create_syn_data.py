@@ -58,7 +58,7 @@ rst = Refraction(verbose=True)
 # rst.setMesh(meshRSTFWD)
 # rst.fop.createRefinedForwardMesh()
 
-error = 0.0001 # seconds
+error = 0.0005 # seconds
 ttData = rst.simulate(meshRSTFWD, 1. / vel, ttScheme, noisify=True,
                       noiseLevel=0.0, noiseAbs=error)
 ttData.set("err", np.ones(ttData.size()) * error)

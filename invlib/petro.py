@@ -5,8 +5,9 @@ import pygimli as pg
 
 
 class FourPhaseModel():
-    def __init__(self, vw=1500., va=330., vi=3500., vr=6000, a=2., n=1., m=1.,
-                 phi=0.4, rhow=100.):
+
+    def __init__(self, vw=1500., va=300., vi=3500., vr=6000, a=1., n=2., m=2,
+                 phi=0.5, rhow=150.):
         """Four phase model (4PM) after Hauck et al. (2011). Estimates fraction
         of ice, air and water from electrical bulk resistivity and seismic
         velocity.
@@ -28,7 +29,7 @@ class FourPhaseModel():
         m : float or array type
             Archie parameter `m` (the default is 1).
         phi : float or array type
-            Porosity `phi` (the default is 0.4).
+            Porosity `phi` (the default is 0.5).
         rhow : float or array type
             Water resistivity `rhow` (the default is 100).
         """
@@ -72,29 +73,19 @@ class FourPhaseModel():
         else:
             phi = 1 - fr
 
-        rho = self.a * self.rhow * phi**(-self.m) * (fw / phi)**(
-            -self.n)
+        rho = self.a * self.rhow * phi**(-self.m) * (fw / phi)**(-self.n)
         if (rho <= 0).any():
             pg.warn(
                 "Found negative resistivity, setting to nearest above zero.")
             rho[rho <= 0] = np.min(rho[rho >= 0])
         return rho
 
-    # def rho_deriv(self, fw, fi, fa):
-    #     """Derivative d rho / d fw for Jacobian scaling."""
-    #     deriv = - self.n * self.rho(fw, fi, fa) / fw
-    #     # deriv = -((self.rhow * self.a) / fw) * self.phi**(-self.m) * self.n * (
-    #         # fw / self.phi)**(-self.n)
-    #     # deriv = -(self.rhow * self.a) * self.phi**(-self.m) * self.n * (
-    #         # fw / self.phi)**(-self.n-1)
-    #     return deriv
-
     # XXX: New formulation with f_r as inversion parameter
     def rho_deriv_fw(self, fw, fi, fa, fr):
         return self.rho(fw, fi, fa, fr) * -self.n / fw
 
     def rho_deriv_fr(self, fw, fi, fa, fr):
-        return self.rho(fw, fi, fa, fr) * (self.n - self.m)/(fr - 1)
+        return self.rho(fw, fi, fa, fr) * (self.n - self.m) / (fr - 1)
 
     # XXX: Old formulations when porosity had to be prescribed
     # def rho_deriv_fw(self, fw, fi, fa):
@@ -105,10 +96,6 @@ class FourPhaseModel():
 
     def slowness(self, fw, fi, fa, fr=None):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
-        # fa = (1 - self.fr - fw - fi)
-        # if (fa <= 0).any():
-        #     pg.warn("Found negative air content, setting to nearest above zero.")
-        #     fa[fa <= 0] = np.min(fa[fa >= 0])
         if fr is None:
             fr = (fw + fi + fa)
 
@@ -120,15 +107,23 @@ class FourPhaseModel():
 
     def all(self, rho, v, mask=False):
         """ Syntatic sugar for all fractions including a mask for unrealistic values. """
+
+        # RVectors sometimes cause segfaults
+        rho = np.array(rho)
+        v = np.array(v)
+
         fa = self.air(rho, v)
         fi = self.ice(rho, v)
         fw = self.water(rho)
 
         # Check that fractions are between 0 and 1
-        array_mask = np.array(((fa < 0) | (fa > 1)) | ((fi < 0) | (fi > 1)) |
-                              ((fw < 0) | (fw > 1)))
+        array_mask = np.array( ((fa < 0) | (fa > 1 - self.fr))
+                             | ((fi < 0) | (fi > 1 - self.fr))
+                             | ((fw < 0) | (fw > 1 - self.fr))
+                             | ((self.fr < 0) | (self.fr > 1))
+        )
         if array_mask.sum() > 1:
-            print("WARNING: %d of %d fraction values outside 0-1 range." %
+            print("WARNING: %d of %d fraction values are unphysical." %
                   (int(array_mask.sum()), len(array_mask.ravel())))
         if mask:
             fa = np.ma.array(fa, mask=array_mask)
@@ -137,11 +132,25 @@ class FourPhaseModel():
 
         return fa, fi, fw, array_mask
 
+    def show(self, mesh, rho, vel):
+        fa, fi, fw, mask = self.all(rho, vel, mask=True)
+
+        fig, axs = plt.subplots(3, 2, figsize=(16, 10))
+        pg.show(mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
+                logScale=False, cmap="Blues")
+        pg.show(mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
+                logScale=False, cmap="Purples")
+        pg.show(mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
+                logScale=False, cmap="Greens")
+        pg.show(mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
+                cmap="Spectral_r", logScale=True)
+        pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False)
+
 
 def testFourPhaseModel():
     # Parameters from Hauck et al. (2011)
-    fpm = FourPhaseModel(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2., m=2.,
-                         a=1., rhow=200.)
+    fpm = FourPhaseModel(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2.,
+                         m=2., a=1., rhow=200.)
 
     assert fpm.water(10.0) == 10.0
     v = np.linspace(500, 6000, 1000)
@@ -154,11 +163,13 @@ def testFourPhaseModel():
     fig, axs = plt.subplots(3, figsize=(6, 4.5), sharex=True)
     labels = ["Air content", "Ice content", "Water content"]
     for data, ax, label in zip([fa, fi, fw], axs, labels):
-        im = ax.imshow(data[::-1], cmap=cmap, extent=[
-            v.min(), v.max(),
-            np.log10(rho.min()),
-            np.log10(rho.max())
-        ], aspect="auto", vmin=0, vmax=0.5)
+        im = ax.imshow(
+            data[::-1], cmap=cmap, extent=[
+                v.min(),
+                v.max(),
+                np.log10(rho.min()),
+                np.log10(rho.max())
+            ], aspect="auto", vmin=0, vmax=0.5)
         cb = plt.colorbar(im, ax=ax, label=label)
 
     axs[1].set_ylabel("Log resistivity ($\Omega$m)")

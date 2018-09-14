@@ -2,24 +2,30 @@ import pygimli as pg
 from .lsqrinversion import LSQRInversion
 
 class JointInv(LSQRInversion):
-    def __init__(self, fop, data, error):
+    def __init__(self, fop, data, error, lam=20, maxIter=50, frmin=0, frmax=1):
         LSQRInversion.__init__(self, data, fop, verbose=True, dosave=True)
         self._error = pg.RVector(error)
-        self.setDefaults()
 
-    def setDefaults(self):
         # Set data transformations
         self.logtrans = pg.RTransLog()
         self.trans = pg.RTrans()
-        self.cumtrans = pg.RTransCumulative()
-        self.cumtrans.add(self.trans, self.forwardOperator().RST.dataContainer.size())
-        self.cumtrans.add(self.logtrans, self.forwardOperator().ERT.data.size())
-        self.setTransData(self.cumtrans)
+        self.dcumtrans = pg.RTransCumulative()
+        self.dcumtrans.add(self.trans, self.forwardOperator().RST.dataContainer.size())
+        self.dcumtrans.add(self.logtrans, self.forwardOperator().ERT.data.size())
+        self.setTransData(self.dcumtrans)
         # self.setTransData(self.logtrans)
 
         # Set model transformation
+        self.mcumtrans = pg.TransCumulative()
         self.modtrans = pg.RTransLogLU(0, 1)
-        self.setTransModel(self.modtrans)
+
+        n = self.forwardOperator().cellCount
+        for i in range(3):
+            self.mcumtrans.add(self.modtrans, n)
+
+        self.phitrans = pg.RTransLogLU(frmin, frmax)
+        self.mcumtrans.add(self.phitrans, n)
+        self.setTransModel(self.mcumtrans)
 
         # Set error
         self.setRelativeError(self._error)
@@ -27,13 +33,16 @@ class JointInv(LSQRInversion):
         # Set some defaults
 
         # Set maximum number of iterations (default is 20)
-        self.setMaxIter(50)
+        self.setMaxIter(maxIter)
 
         # Regularization strength
-        self.setLambda(20)
+        self.setLambda(lam)
         self.setDeltaPhiAbortPercent(1)
 
         self.forwardOperator().createConstraints() # Important!
         ones = pg.RVector(self.forwardOperator()._I.rows(), 1.0)
-        phiVec = pg.cat(ones, ones - self.forwardOperator().fpm.phi)
+        if self.forwardOperator().fix_poro:
+            phiVec = pg.cat(ones, ones - self.forwardOperator().fpm.phi)
+        else:
+            phiVec = ones
         self.setParameterConstraints(self.forwardOperator()._G, phiVec, 10000)

@@ -6,7 +6,7 @@ import pygimli as pg
 
 class JointMod(pg.ModellingBase):
 
-    def __init__(self, mesh, ertfop, rstfop, petromodel, verbose=True):
+    def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True, verbose=True):
         pg.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
         self.ERT = ertfop
@@ -14,6 +14,7 @@ class JointMod(pg.ModellingBase):
         self.fops = [self.RST, self.ERT]
         self.fpm = petromodel
         self.cellCount = self.mesh.cellCount()
+        self.fix_poro = fix_poro
         self.createConstraints()
 
     def fractions(self, model):
@@ -83,7 +84,8 @@ class JointMod(pg.ModellingBase):
         self._G.addMatrixEntry(iid, 0, self.cellCount * 2)
         self._G.addMatrixEntry(iid, 0, self.cellCount * 3)
         # Fix f_r
-        self._G.addMatrixEntry(iid, self._G.rows(), self.cellCount * 3)
+        if self.fix_poro:
+            self._G.addMatrixEntry(iid, self._G.rows(), self.cellCount * 3)
 
     def showModel(self, model):
         fw, fi, fa, fr = self.fractions(model)
