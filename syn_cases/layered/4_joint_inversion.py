@@ -10,7 +10,9 @@ import pygimli as pg
 from invlib import FourPhaseModel, JointMod, JointInv
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
+from scipy.sparse import lil_matrix, save_npz
 
+maxIter=50
 
 # Load meshes and data
 mesh = pg.load("mesh.bms")
@@ -26,7 +28,10 @@ ertScheme = pg.DataContainerERT("erttrue.dat")
 meshRST = pg.load("paraDomain.bms")
 meshERT = pg.load("meshERT.bms")
 
-fpm = FourPhaseModel(phi=0.4)
+frtrue = np.load("true_model.npz")["fr"]
+phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+
+fpm = FourPhaseModel(phi=phi)
 
 # Setup managers and equip with meshes
 ert = ERTManager()
@@ -44,7 +49,7 @@ JM = JointMod(meshRST, ert, rst, fpm, fix_poro=False)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
 error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))
-inv = JointInv(JM, data, error, frmin=0.5, frmax=0.7)
+inv = JointInv(JM, data, error, frmin=0.5, frmax=0.7, maxIter=maxIter)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel.dat")
@@ -63,6 +68,23 @@ inv.setModel(startmodel)
 model = inv.run()
 pg.boxprint(("Chi squared fit:", inv.getChi2()), sym="+")
 
+# Extract jacobian, constraints and data weight for model res calculation
+# def block2numpy(B):
+#     N = lil_matrix((B.rows(), B.cols()))
+#     for i in range(B.rows()):
+#         print(i, B.rows(), end="\r")
+#         N[i] = B.row(i)
+#     return N
+#
+# fop = inv.forwardOperator()
+# J = block2numpy(fop.jacobian())
+# J.toarray().dump("jacobian.npz")
+#
+# C = block2numpy(fop.constraints())
+# save_npz("constraints.npz", C.tocsr())
+#
+# inv.dataWeight().save("data_weight.dat")
+
 # Save results
 fwe, fie, fae, fre = JM.fractions(model)
 fsum = fwe + fie + fae + fre
@@ -80,3 +102,8 @@ array_mask = np.array( ((fae < 0) | (fae > 1 - fre))
 
 np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
          fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
+
+pg.tic("Calculate model resolution matrix.")
+R = inv.modelResolutionMatrix()
+R = pg.utils.gmat2numpy(R)
+R.dump("resolution.npz")

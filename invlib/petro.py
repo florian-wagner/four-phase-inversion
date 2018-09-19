@@ -77,7 +77,7 @@ class FourPhaseModel():
         if (rho <= 0).any():
             pg.warn(
                 "Found negative resistivity, setting to nearest above zero.")
-            rho[rho <= 0] = np.min(rho[rho >= 0])
+            rho[rho <= 0] = np.min(rho[rho > 0])
         return rho
 
     # XXX: New formulation with f_r as inversion parameter
@@ -102,7 +102,7 @@ class FourPhaseModel():
         s = fw / self.vw + fr / self.vr + fi / self.vi + fa / self.va
         if (s <= 0).any():
             pg.warn("Found negative slowness, setting to nearest above zero.")
-            s[s <= 0] = np.min(s[s >= 0])
+            s[s <= 0] = np.min(s[s > 0])
         return s
 
     def all(self, rho, v, mask=False):

@@ -13,11 +13,10 @@ class JointInv(LSQRInversion):
         self.dcumtrans.add(self.trans, self.forwardOperator().RST.dataContainer.size())
         self.dcumtrans.add(self.logtrans, self.forwardOperator().ERT.data.size())
         self.setTransData(self.dcumtrans)
-        # self.setTransData(self.logtrans)
 
         # Set model transformation
         self.mcumtrans = pg.TransCumulative()
-        self.modtrans = pg.RTransLogLU(0, 1)
+        self.modtrans = pg.RTransLogLU(0.0, 1.0)
 
         n = self.forwardOperator().cellCount
         for i in range(3):

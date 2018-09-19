@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pygimli as pg
+import pybert as pb
 
 
 class JointMod(pg.ModellingBase):
@@ -65,9 +66,6 @@ class JointMod(pg.ModellingBase):
         # CM = pg.utils.geostatistics.covarianceMatrix(self.mesh, I=[40, 3])
         # self._Ctmp = pg.matrix.Cm05Matrix(CM)
 
-        # Identity matrix for interparameter regularization
-        self._I = pg.IdentityMatrix(self.cellCount)
-
         # Putting together in block matrix
         self._C = pg.RBlockMatrix()
         cid = self._C.addMatrix(self._Ctmp)
@@ -76,6 +74,9 @@ class JointMod(pg.ModellingBase):
         self._C.addMatrixEntry(cid, self._Ctmp.rows() * 2, self.cellCount * 2)
         self._C.addMatrixEntry(cid, self._Ctmp.rows() * 3, self.cellCount * 3)
         self.setConstraints(self._C)
+
+        # Identity matrix for interparameter regularization
+        self._I = pg.IdentityMatrix(self.cellCount)
 
         self._G = pg.RBlockMatrix()
         iid = self._G.addMatrix(self._I)
@@ -122,6 +123,7 @@ class JointMod(pg.ModellingBase):
         return self.response_mt(model)
 
     def response_mt(self, model, i=0):
+        model = np.nan_to_num(model)
         fw, fi, fa, fr = self.fractions(model)
 
         rho = self.fpm.rho(fw, fi, fa, fr)

@@ -10,15 +10,9 @@ import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 
-from invlib import FourPhaseModel
+from invlib import FourPhaseModel, NN_interpolate
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
-
-############
-# Settings
-maxIter = 50
-phi = 0.4 # Porosity assumed to calculate fi, fa, fw with 4PM
-############
 
 ertData = pb.load("erttrue.dat")
 print(ertData)
@@ -30,6 +24,17 @@ meshRST = mt.createParaMesh(ertData, paraDepth=depth, paraDX=0.1, smooth=[1, 2],
                             paraMaxCellSize=.5, quality=33.5, boundary=0,
                             paraBoundary=3)
 meshRST.save("paraDomain.bms")
+
+############
+# Settings
+maxIter = 50
+# phi = 0.4 # Porosity assumed to calculate fi, fa, fw with 4PM
+
+frtrue = np.load("true_model.npz")["fr"]
+phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+
+############
+
 
 # meshERT = mt.createParaMesh(ertScheme, quality=33.5, paraMaxCellSize=1.0,
 #                             paraDX=0.2, boundary=50, smooth=[1, 10],

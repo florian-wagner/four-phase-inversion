@@ -1,8 +1,11 @@
 from copy import copy
 
+import seaborn
+seaborn.set_context("paper")
+seaborn.set(font="Arial")
+
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn
 from matplotlib import ticker
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.path import Path
@@ -13,8 +16,17 @@ from scipy.spatial import ConvexHull
 import pygimli as pg
 from pygimli.mplviewer import addCoverageAlpha, drawModel
 
-seaborn.set(font="Fira Sans", style="ticks")
+seaborn.set(style="dark")
 plt.rcParams["image.cmap"] = "viridis"
+
+config = dict(fontsize=6)
+plt.rcParams['font.size'] = config['fontsize']
+plt.rcParams['axes.labelsize'] = config['fontsize']
+plt.rcParams['xtick.labelsize'] = config['fontsize']
+plt.rcParams['ytick.labelsize'] = config['fontsize']
+plt.rcParams['legend.fontsize'] = config['fontsize']
+plt.rcParams['xtick.major.pad'] = 1
+plt.rcParams['ytick.major.pad'] = 1
 
 # Load data
 mesh = pg.load("mesh.bms")
@@ -56,7 +68,7 @@ def add_inner_title(ax, title, loc, size=None, **kwargs):
     at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
                       frameon=False, **kwargs)
     ax.add_artist(at)
-    at.txt._text.set_path_effects([withStroke(foreground="w", linewidth=2)])
+    at.txt._text.set_path_effects([withStroke(foreground="w", linewidth=1)])
     at.patch.set_ec("none")
     at.patch.set_alpha(0.5)
     return at
@@ -67,7 +79,7 @@ def update_ticks(cb, log=False, label=""):
         t = ticker.LogLocator(numticks=2)
     else:
         t = ticker.LinearLocator(numticks=2)
-    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(80,
+    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(20,
                                                                          0),
                    textcoords='offset pixels', horizontalalignment='center',
                    verticalalignment='center', rotation=90)
@@ -90,10 +102,10 @@ def lim(data):
     return kwargs
 
 
-fig = plt.figure(figsize=(18, 18))
-grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.15, share_all=True,
+fig = plt.figure(figsize=(7, 5))
+grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.02, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
-                 cbar_size="5%", cbar_pad=0.15, aspect=True)
+                 cbar_size="5%", cbar_pad=0.05, aspect=True)
 
 ert_cov = np.loadtxt("ert_coverage.dat")
 rst_cov = np.loadtxt("rst_coverage.dat")
@@ -172,6 +184,9 @@ def draw(ax, mesh, model, **kwargs):
 
 
 def eps(inv, true):
+    if len(inv) > 10000:
+        inv = np.array(inv)
+        inv = inv[cov == 1]
     # true_int = pg.interpolate(mesh, true, meshj.cellCenters()).array()
 
     # a = []
@@ -195,10 +210,10 @@ fre = 1 - fwe - fae - fie
 
 allvel = list(veltrue) + list(velest) + list(veljoint)
 allrho = list(rhotrue) + list(rhoest) + list(rhojoint)
-allfa = list(fa) + list(fae) + list(faj)
-allfw = list(fw) + list(fwe) + list(fwj)
-allfi = list(fi) + list(fie) + list(fij)
-allfr = list(fr) + list(fre) + list(frj)
+allfa = list(fa) + list(fae[cov > 0]) + list(faj[cov > 0])
+allfw = list(fw) + list(fwe[cov > 0]) + list(fwj[cov > 0])
+allfi = list(fi) + list(fie[cov > 0]) + list(fij[cov > 0])
+allfr = list(fr) + list(fre[cov > 0]) + list(frj[cov > 0])
 
 im = draw(grid.axes_row[0][0], mesh, veltrue, cmap="viridis", **lim(allvel),
           logScale=False)
@@ -220,49 +235,49 @@ update_ticks(cb, log=True, label=labels[1])
 
 im = draw(grid.axes_row[2][0], mesh, fa, logScale=False, cmap="Greens",
           **lim(allfa))
-add_inner_title(grid.axes_row[2][0], eps(fa, fa), loc=4, size=8)
+add_inner_title(grid.axes_row[2][0], eps(fa, fa), loc=4, size=config["fontsize"])
 draw(grid.axes_row[2][1], meshj, fae, logScale=False, cmap="Greens",
      **lim(allfa), coverage=cov)
-add_inner_title(grid.axes_row[2][1], eps(fae, fa), loc=4, size=8)
+add_inner_title(grid.axes_row[2][1], eps(fae, fa), loc=4, size=config["fontsize"])
 draw(grid.axes_row[2][2], meshj, faj, logScale=False, cmap="Greens",
      **lim(allfa), coverage=cov)
-add_inner_title(grid.axes_row[2][2], eps(faj, fa), loc=4, size=8)
+add_inner_title(grid.axes_row[2][2], eps(faj, fa), loc=4, size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[2])
 update_ticks(cb, label=labels[2])
 
 im = draw(grid.axes_row[3][0], mesh, fi, logScale=False, cmap="Purples",
           **lim(allfi))
-add_inner_title(grid.axes_row[3][0], eps(fi, fi), loc=4, size=8)
+add_inner_title(grid.axes_row[3][0], eps(fi, fi), loc=4, size=config["fontsize"])
 draw(grid.axes_row[3][1], meshj, fie, logScale=False, cmap="Purples",
      **lim(allfi), coverage=cov)
-add_inner_title(grid.axes_row[3][1], eps(fie, fi), loc=4, size=8)
+add_inner_title(grid.axes_row[3][1], eps(fie, fi), loc=4, size=config["fontsize"])
 draw(grid.axes_row[3][2], meshj, fij, logScale=False, cmap="Purples",
      **lim(allfi), coverage=cov)
-add_inner_title(grid.axes_row[3][2], eps(fij, fi), loc=4, size=8)
+add_inner_title(grid.axes_row[3][2], eps(fij, fi), loc=4, size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[3])
 update_ticks(cb, label=labels[3])
 
 im = draw(grid.axes_row[4][0], mesh, fw, logScale=False, cmap="Blues",
           **lim(allfw))
-add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, size=8)
+add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, size=config["fontsize"])
 draw(grid.axes_row[4][1], meshj, fwe, logScale=False, cmap="Blues",
      **lim(allfw), coverage=cov)
-add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, size=8)
+add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, size=config["fontsize"])
 draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues",
      **lim(allfw), coverage=cov)
-add_inner_title(grid.axes_row[4][2], eps(fwj, fw), loc=4, size=8)
+add_inner_title(grid.axes_row[4][2], eps(fwj, fw), loc=4, size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[4])
 update_ticks(cb, label=labels[4])
 
 im = draw(grid.axes_row[5][0], mesh, fr, logScale=False, cmap="Oranges",
           **lim(allfr))
-add_inner_title(grid.axes_row[5][0], eps(fr, fr), loc=4, size=8)
+add_inner_title(grid.axes_row[5][0], eps(fr, fr), loc=4, size=config["fontsize"])
 draw(grid.axes_row[5][1], meshj, fre, logScale=False, cmap="Oranges",
      **lim(allfr), coverage=cov)
-add_inner_title(grid.axes_row[5][1], eps(fre, fr), loc=4, size=8)
+add_inner_title(grid.axes_row[5][1], eps(fre, fr), loc=4, size=config["fontsize"])
 draw(grid.axes_row[5][2], meshj, frj, logScale=False, cmap="Oranges",
      **lim(allfr), coverage=cov)
-add_inner_title(grid.axes_row[5][2], eps(frj, fr), loc=4, size=8)
+add_inner_title(grid.axes_row[5][2], eps(frj, fr), loc=4, size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[5])
 update_ticks(cb, label=labels[5])
 
@@ -270,15 +285,15 @@ for ax, title in zip(grid.axes_row[0], [
         "True model", "Conventional inversion + 4PM",
         "Petrophysical joint inversion"
 ]):
-    ax.set_title(title, fontweight="bold")
+    ax.set_title(title, fontsize=config["fontsize"])
 
 labs = ["inverted", "inverted", "transformed", "transformed", "transformed", "assumed"]
 for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=8)
+    add_inner_title(ax, lab, loc=3, size=config["fontsize"])
 
-labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "inverted"]
+labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "assumed and fixed"]
 for ax, lab in zip(grid.axes_column[2], labs):
-    add_inner_title(ax, lab, loc=3, size=8)
+    add_inner_title(ax, lab, loc=3, size=config["fontsize"])
 # for ax in grid.axes_column[2][2:]:
 
 #     pass
@@ -288,8 +303,8 @@ for ax, lab in zip(grid.axes_column[2], labs):
 
 for ax in grid.axes_all:
     ax.set_facecolor("0.5")
-    ax.plot(sensors, np.zeros_like(sensors), 'rv')
-    # ax.set_aspect(1.4)
+    ax.plot(sensors, np.zeros_like(sensors), 'rv', ms=3)
+    ax.set_aspect(1.5)
 
 for row in grid.axes_row[:-1]:
     for ax in row:
