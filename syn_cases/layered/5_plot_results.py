@@ -2,7 +2,7 @@ from copy import copy
 
 import seaborn
 seaborn.set_context("paper")
-seaborn.set(font="Arial")
+seaborn.set(font="Noto Sans")
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,7 +79,7 @@ def update_ticks(cb, log=False, label=""):
         t = ticker.LogLocator(numticks=2)
     else:
         t = ticker.LinearLocator(numticks=2)
-    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(20,
+    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(30,
                                                                          0),
                    textcoords='offset pixels', horizontalalignment='center',
                    verticalalignment='center', rotation=90)
@@ -100,9 +100,9 @@ def lim(data):
     kwargs = {"cMin": dmin, "cMax": dmax}
     print(dmin, dmax)
     return kwargs
+# %%
 
-
-fig = plt.figure(figsize=(7, 5))
+fig = plt.figure(figsize=(7, 4))
 grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.02, share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.05, aspect=True)
@@ -285,7 +285,7 @@ for ax, title in zip(grid.axes_row[0], [
         "True model", "Conventional inversion + 4PM",
         "Petrophysical joint inversion"
 ]):
-    ax.set_title(title, fontsize=config["fontsize"])
+    ax.set_title(title, fontsize=config["fontsize"], fontweight="bold")
 
 labs = ["inverted", "inverted", "transformed", "transformed", "transformed", "assumed"]
 for ax, lab in zip(grid.axes_column[1], labs):
@@ -305,6 +305,7 @@ for ax in grid.axes_all:
     ax.set_facecolor("0.5")
     ax.plot(sensors, np.zeros_like(sensors), 'rv', ms=3)
     ax.set_aspect(1.5)
+    ax.tick_params(axis='both', which='major', pad=-3)
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -317,15 +318,20 @@ for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)")
 
 for ax, label in zip(grid.axes_column[0], long_labels):
+    old_labels = [x.get_text() for x in list(ax.get_yticklabels())]
+    print(old_labels)
+    new_ticks = [x.replace("-", "") for x in old_labels]
+    ax.set_yticklabels(new_ticks)
+    ax.set_ylabel("Depth (m)")
     add_inner_title(ax, label, loc=3)
-    ax.set_ylabel("y (m)")
 
 # for ax in grid.axes_column[1][2:]:
 #     # Mask unphysical values
 #     im = draw(ax, meshj, est["mask"], coverage=cov, logScale=False,
 #          cmap="gray_r", grid=False)
 
+fig.tight_layout()
 fig.show()
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
-fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
+#fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
 # pg.wait()

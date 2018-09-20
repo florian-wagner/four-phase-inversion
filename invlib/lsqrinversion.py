@@ -27,9 +27,10 @@ class LSQRInversion(pg.RInversion):
         """Run."""
         print("model", min(self.model()), max(self.model()))
         for i in range(self.maxIter()):
-            pg.boxprint("Iteration #%d" % i, width=80, sym="#")
+            pg.boxprint("Iteration #%d" % i, width=80, sym="+")
+            print("\n")
             self.oneStep()
-            pg.boxprint(("It:", i, "Chi2:", self.chi2(), "RMS", self.relrms()))
+            pg.boxprint(("It:", i, "Chi2: %.2f" % self.chi2(), "RMS: %.2f %%" % self.relrms()))
             if self.chi2() <= 1.0:
                 print("Done. Reached target data misfit of chi^2 <= 1.")
                 break
