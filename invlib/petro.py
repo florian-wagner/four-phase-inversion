@@ -97,7 +97,7 @@ class FourPhaseModel():
     def slowness(self, fw, fi, fa, fr=None):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
         if fr is None:
-            fr = (fw + fi + fa)
+            fr = 1 - (fw + fi + fa)
 
         s = fw / self.vw + fr / self.vr + fi / self.vi + fa / self.va
         if (s <= 0).any():
