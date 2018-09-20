@@ -66,7 +66,8 @@ inv.setModel(startmodel)
 
 # Run inversion
 model = inv.run()
-pg.boxprint(("Chi squared fit:", inv.getChi2()), sym="+")
+#pg.boxprint(("Chi squared fit:", inv.getChi2()), sym="+")
+print(("Chi squared fit:", inv.getChi2()))
 
 # Extract jacobian, constraints and data weight for model res calculation
 # def block2numpy(B):
