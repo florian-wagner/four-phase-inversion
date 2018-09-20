@@ -103,7 +103,8 @@ array_mask = np.array( ((fae < 0) | (fae > 1 - fre))
 np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
          fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
 
-pg.tic("Calculate model resolution matrix.")
-R = inv.modelResolutionMatrix()
-R = pg.utils.gmat2numpy(R)
-R.dump("resolution.npz")
+# WAY TOO INEFFICIENT
+#pg.tic("Calculate model resolution matrix.")
+#R = inv.modelResolutionMatrix()
+#R = pg.utils.gmat2numpy(R)
+#R.dump("resolution.npz")

@@ -15,8 +15,8 @@ from invlib import FourPhaseModel
 # matplotlib.use("Agg")
 
 # Model creation
-world = mt.createWorld([0, -30], [150, 0], layers=[-6, -16], worldMarker=False)
-block = mt.createPolygon([[60, -6], [90, -6], [100, -16], [50, -16]],
+world = mt.createWorld([0, -30], [150, 0], layers=[-5, -15], worldMarker=False)
+block = mt.createPolygon([[60, -5], [90, -5], [100, -15], [50, -15]],
                          isClosed=True)
 geom = mt.mergePLC([world, block])
 

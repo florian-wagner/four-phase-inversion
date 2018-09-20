@@ -20,9 +20,18 @@ mesh = pg.load("mesh.bms")
 depth = mesh.ymax() - mesh.ymin()
 
 # Build inversion meshes
-meshRST = mt.createParaMesh(ertData, paraDepth=depth, paraDX=0.1, smooth=[1, 2],
-                            paraMaxCellSize=.5, quality=33.5, boundary=0,
-                            paraBoundary=3)
+plc = mt.createParaMeshPLC(ertData, paraDepth=depth, paraDX=0.1,
+                           boundary=0, paraBoundary=2)
+
+rect = mt.createRectangle([mesh.xmin(), mesh.ymin()],
+                          [mesh.xmax(), mesh.ymax()])
+geom = mt.mergePLC([plc, rect])
+
+meshRST = mt.createMesh(geom, quality=34, area=.5, smooth=[1,2])
+for cell in meshRST.cells():
+    cell.setMarker(2)
+
+pg.show(meshRST)
 meshRST.save("paraDomain.bms")
 
 ############
@@ -39,7 +48,7 @@ phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
 # meshERT = mt.createParaMesh(ertScheme, quality=33.5, paraMaxCellSize=1.0,
 #                             paraDX=0.2, boundary=50, smooth=[1, 10],
 #                             paraBoundary=3)
-meshERT = mt.appendTriangleBoundary(meshRST, xbound=50, ybound=50,
+meshERT = mt.appendTriangleBoundary(meshRST, xbound=500, ybound=500,
                                     quality=34, isSubSurface=True)
 meshERT.save("meshERT.bms")
 
