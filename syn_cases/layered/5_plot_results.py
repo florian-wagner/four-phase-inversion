@@ -60,27 +60,27 @@ long_labels = [
 ]
 
 
-def add_inner_title(ax, title, loc, size=None, **kwargs):
+def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
     if size is None:
-        size = dict(size=plt.rcParams['legend.fontsize'])
+        size = dict(size=plt.rcParams['legend.fontsize'], color=c)
     else:
-        size = dict(size=size)
+        size = dict(size=size, color=c)
     at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
                       frameon=False, **kwargs)
     ax.add_artist(at)
-    at.txt._text.set_path_effects([withStroke(foreground="w", linewidth=1)])
-    at.patch.set_ec("none")
-    at.patch.set_alpha(0.5)
+    if frame:
+        at.txt._text.set_path_effects([withStroke(foreground="w", linewidth=1)])
+        at.patch.set_ec("none")
+        at.patch.set_alpha(0.5)
     return at
 
 
 def update_ticks(cb, log=False, label=""):
     if log:
-        t = ticker.LogLocator(numticks=2)
+        t = ticker.LogLocator(numticks=3)
     else:
         t = ticker.LinearLocator(numticks=2)
-    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(30,
-                                                                         0),
+    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(25,0),
                    textcoords='offset pixels', horizontalalignment='center',
                    verticalalignment='center', rotation=90)
     cb.set_ticks(t)
@@ -95,15 +95,15 @@ def lim(data):
     dmin = np.around(data.min(), 2)
     dmax = np.around(data.max(), 2)
     print(dmin, dmax)
-    if dmin < 0.02:
-        dmin = 0
+    if dmin < 0.05:
+        dmin = 0.0
     kwargs = {"cMin": dmin, "cMax": dmax}
     print(dmin, dmax)
     return kwargs
 # %%
 
-fig = plt.figure(figsize=(7, 4))
-grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=0.02, share_all=True,
+fig = plt.figure(figsize=(7, 4.5))
+grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.02, 0.1], share_all=True,
                  add_all=True, cbar_location="right", cbar_mode="edge",
                  cbar_size="5%", cbar_pad=0.05, aspect=True)
 
@@ -203,7 +203,7 @@ def eps(inv, true):
     #         b.append(inv[cell.id()])
 
     # return r"$\epsilon$ = %.2f" % pg.rms(a, b)
-    return "min: %.2f / max: %.2f" % (min(inv), max(inv))
+    return "min: %.2f\nmax: %.2f" % (min(inv), max(inv))
 
 
 fre = 1 - fwe - fae - fie
@@ -230,54 +230,54 @@ draw(grid.axes_row[1][1], meshj, rhoest, cmap="Spectral_r", **lim(allrho),
      logScale=True, coverage=cov)
 draw(grid.axes_row[1][2], meshj, rhojoint, cmap="Spectral_r", **lim(allrho),
      logScale=True, coverage=cov)
-cb = fig.colorbar(im, cax=grid.cbar_axes[1])
+cb = fig.colorbar(im, cax=grid.cbar_axes[1], aspect=5)
 update_ticks(cb, log=True, label=labels[1])
 
 im = draw(grid.axes_row[2][0], mesh, fa, logScale=False, cmap="Greens",
           **lim(allfa))
-add_inner_title(grid.axes_row[2][0], eps(fa, fa), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[2][0], eps(fa, fa), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[2][1], meshj, fae, logScale=False, cmap="Greens",
      **lim(allfa), coverage=cov)
-add_inner_title(grid.axes_row[2][1], eps(fae, fa), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[2][1], eps(fae, fa), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[2][2], meshj, faj, logScale=False, cmap="Greens",
      **lim(allfa), coverage=cov)
-add_inner_title(grid.axes_row[2][2], eps(faj, fa), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[2][2], eps(faj, fa), loc=4, frame=False, c="w", size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[2])
 update_ticks(cb, label=labels[2])
 
 im = draw(grid.axes_row[3][0], mesh, fi, logScale=False, cmap="Purples",
           **lim(allfi))
-add_inner_title(grid.axes_row[3][0], eps(fi, fi), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[3][0], eps(fi, fi), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[3][1], meshj, fie, logScale=False, cmap="Purples",
      **lim(allfi), coverage=cov)
-add_inner_title(grid.axes_row[3][1], eps(fie, fi), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[3][1], eps(fie, fi), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[3][2], meshj, fij, logScale=False, cmap="Purples",
      **lim(allfi), coverage=cov)
-add_inner_title(grid.axes_row[3][2], eps(fij, fi), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[3][2], eps(fij, fi), loc=4, frame=False, c="w", size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[3])
 update_ticks(cb, label=labels[3])
 
 im = draw(grid.axes_row[4][0], mesh, fw, logScale=False, cmap="Blues",
           **lim(allfw))
-add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[4][1], meshj, fwe, logScale=False, cmap="Blues",
      **lim(allfw), coverage=cov)
-add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[4][2], meshj, fwj, logScale=False, cmap="Blues",
      **lim(allfw), coverage=cov)
-add_inner_title(grid.axes_row[4][2], eps(fwj, fw), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[4][2], eps(fwj, fw), loc=4, frame=False, c="w", size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[4])
 update_ticks(cb, label=labels[4])
 
 im = draw(grid.axes_row[5][0], mesh, fr, logScale=False, cmap="Oranges",
           **lim(allfr))
-add_inner_title(grid.axes_row[5][0], eps(fr, fr), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[5][0], eps(fr, fr), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[5][1], meshj, fre, logScale=False, cmap="Oranges",
      **lim(allfr), coverage=cov)
-add_inner_title(grid.axes_row[5][1], eps(fre, fr), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[5][1], eps(fre, fr), loc=4, frame=False, c="w", size=config["fontsize"])
 draw(grid.axes_row[5][2], meshj, frj, logScale=False, cmap="Oranges",
      **lim(allfr), coverage=cov)
-add_inner_title(grid.axes_row[5][2], eps(frj, fr), loc=4, size=config["fontsize"])
+add_inner_title(grid.axes_row[5][2], eps(frj, fr), loc=4, frame=False, c="w", size=config["fontsize"])
 cb = fig.colorbar(im, cax=grid.cbar_axes[5])
 update_ticks(cb, label=labels[5])
 
@@ -289,23 +289,18 @@ for ax, title in zip(grid.axes_row[0], [
 
 labs = ["inverted", "inverted", "transformed", "transformed", "transformed", "assumed"]
 for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=config["fontsize"])
+    add_inner_title(ax, lab, loc=3, size=config["fontsize"], frame=False, c="w")
 
 labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "assumed and fixed"]
 for ax, lab in zip(grid.axes_column[2], labs):
-    add_inner_title(ax, lab, loc=3, size=config["fontsize"])
-# for ax in grid.axes_column[2][2:]:
-
-#     pass
-# Mask unphysical values
-# draw(ax, meshj, joint["mask"], coverage=joint["mask"], logScale=False,
-#      cmap="gray_r")
+    add_inner_title(ax, lab, loc=3, size=config["fontsize"], frame=False, c="w")
 
 for ax in grid.axes_all:
     ax.set_facecolor("0.5")
-    ax.plot(sensors, np.zeros_like(sensors), 'rv', ms=3)
+    ax.plot(sensors, np.zeros_like(sensors), 'kv', ms=3)
     ax.set_aspect(1.5)
     ax.tick_params(axis='both', which='major', pad=-3)
+    ax.set_xticks([25,50,75,100,125])
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -318,11 +313,13 @@ for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)")
 
 for ax, label in zip(grid.axes_column[0], long_labels):
-    old_labels = [x.get_text() for x in list(ax.get_yticklabels())]
-    print(old_labels)
-    new_ticks = [x.replace("-", "") for x in old_labels]
-    ax.set_yticklabels(new_ticks)
-    ax.set_ylabel("Depth (m)")
+#    old_labels = [x.get_text() for x in list(ax.get_yticklabels())]
+#    print(old_labels)
+#    new_ticks = [x.replace("-", "") for x in old_labels]
+#    ax.set_yticklabels(new_ticks)
+    ax.set_yticks([-5,-15])
+    ax.set_yticklabels([" 5", "15"])
+    ax.set_ylabel("Depth (m)", labelpad=1)
     add_inner_title(ax, label, loc=3)
 
 # for ax in grid.axes_column[1][2:]:
@@ -333,5 +330,5 @@ for ax, label in zip(grid.axes_column[0], long_labels):
 fig.tight_layout()
 fig.show()
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
-#fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
+fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
 # pg.wait()
