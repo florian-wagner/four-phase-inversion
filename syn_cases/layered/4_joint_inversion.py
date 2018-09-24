@@ -28,8 +28,9 @@ ertScheme = pg.DataContainerERT("erttrue.dat")
 meshRST = pg.load("paraDomain.bms")
 meshERT = pg.load("meshERT.bms")
 
-frtrue = np.load("true_model.npz")["fr"]
-phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+# frtrue = np.load("true_model.npz")["fr"]
+# phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+phi = 0.4
 
 fpm = FourPhaseModel(phi=phi)
 
@@ -55,13 +56,17 @@ inv = JointInv(JM, data, error, frmin=0.5, frmax=0.7, maxIter=maxIter)
 velstart = np.loadtxt("rst_startmodel.dat")
 rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
 fas, fis, fws, _ = fpm.all(rhostart, velstart)
-startmodel = np.concatenate((fws, fis, fas, np.ones_like(fas) - fpm.phi))
+frs = np.ones_like(fas) - fpm.phi
+frs[frs <= 0.51] = 0.51
+frs[frs >= 0.69] = 0.69
+startmodel = np.concatenate((fws, fis, fas, frs))
 
 # Set result of conventional inversion as starting model
 # rockstart = np.ones_like(conventional["fi"]) - fpm.phi
 # startmodel = np.concatenate((conventional["fw"], conventional["fi"], conventional["fa"], rockstart))
 
-startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
+# Fix small values to avoid problems in first iteration
+startmodel[startmodel <= 0.01] = 0.01
 inv.setModel(startmodel)
 
 # Run inversion

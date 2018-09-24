@@ -259,7 +259,7 @@ update_ticks(cb, label=labels[3])
 
 im = draw(grid.axes_row[4][0], mesh, fw, logScale=False, cmap="Blues",
           **lim(allfw))
-add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, frame=False, c="w", size=config["fontsize"])
+add_inner_title(grid.axes_row[4][0], eps(fw, fw), loc=4, frame=False, c="k", size=config["fontsize"])
 draw(grid.axes_row[4][1], meshj, fwe, logScale=False, cmap="Blues",
      **lim(allfw), coverage=cov)
 add_inner_title(grid.axes_row[4][1], eps(fwe, fw), loc=4, frame=False, c="w", size=config["fontsize"])
@@ -292,6 +292,7 @@ for ax, lab in zip(grid.axes_column[1], labs):
     add_inner_title(ax, lab, loc=3, size=config["fontsize"], frame=False, c="w")
 
 labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "assumed and fixed"]
+labs = ["transformed", "transformed", "inverted", "inverted", "inverted", "inverted"]
 for ax, lab in zip(grid.axes_column[2], labs):
     add_inner_title(ax, lab, loc=3, size=config["fontsize"], frame=False, c="w")
 
@@ -329,6 +330,6 @@ for ax, label in zip(grid.axes_column[0], long_labels):
 
 fig.tight_layout()
 fig.show()
-# fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
+fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
 # pg.wait()
