@@ -16,7 +16,7 @@ class JointInv(LSQRInversion):
 
         # Set model transformation
         self.mcumtrans = pg.TransCumulative()
-        self.modtrans = pg.RTransLogLU(0.0, 1.0)
+        self.modtrans = pg.RTransLogLU(0.0001, 1.0)
 
         n = self.forwardOperator().cellCount
         for i in range(3):
@@ -36,7 +36,7 @@ class JointInv(LSQRInversion):
 
         # Regularization strength
         self.setLambda(lam)
-        self.setDeltaPhiAbortPercent(1)
+        self.setDeltaPhiAbortPercent(0.5)
 
         self.forwardOperator().createConstraints() # Important!
         ones = pg.RVector(self.forwardOperator()._I.rows(), 1.0)

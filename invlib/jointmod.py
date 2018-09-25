@@ -101,6 +101,8 @@ class JointMod(pg.ModellingBase):
                 logScale=False, cmap="Purples")
         pg.show(self.mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
                 logScale=False, cmap="Greens")
+        pg.show(self.mesh, fr, ax=axs[2, 1], label="Rock matrix content", hold=True,
+                logScale=False, cmap="Oranges")
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
                 cmap="Spectral_r")
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")

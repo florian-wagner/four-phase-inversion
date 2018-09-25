@@ -41,6 +41,7 @@ maxIter = 50
 
 frtrue = np.load("true_model.npz")["fr"]
 phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+phi = 0.4
 
 ############
 

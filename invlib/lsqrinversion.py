@@ -3,6 +3,7 @@ from math import sqrt
 import numpy as np
 
 import pygimli as pg
+from pygimli.utils import boxprint
 
 from .mylsqr import lsqr
 
@@ -27,12 +28,10 @@ class LSQRInversion(pg.RInversion):
         """Run."""
         print("model", min(self.model()), max(self.model()))
         for i in range(self.maxIter()):
-            #pg.boxprint("Iteration #%d" % i, width=80, sym="+")
-            print("Iteration #%d" % i)
-            print("\n")
+            boxprint("Iteration #%d" % i, width=80, sym="+")
             self.oneStep()
-            #pg.boxprint(("It:", i, "Chi2: %.2f" % self.chi2(), "RMS: %.2f %%" % self.relrms()))
-            print(("It:", i, "Chi2: %.2f" % self.chi2(), "RMS: %.2f %%" % self.relrms()))     
+            boxprint(("It:", i, "Chi2: %.2f" % self.chi2(),
+                      "RMS: %.2f %%" % self.relrms()))
             if self.chi2() <= 1.0:
                 print("Done. Reached target data misfit of chi^2 <= 1.")
                 break
@@ -65,7 +64,8 @@ class LSQRInversion(pg.RInversion):
         # part 1: data part
         J = self.forwardOperator().jacobian()
         # self.dScale = 1.0 / pg.log(self.error()+1.0)
-        self.dScale = 1.0 / (tD.deriv(self.data()) * self.error() * self.data())
+        self.dScale = 1.0 / (
+            tD.deriv(self.data()) * self.error() * self.data())
         self.leftJ = tD.deriv(self.response()) * self.dScale
         #        self.leftJ = self.dScale / tD.deriv(self.response())
         self.rightJ = 1.0 / tM.deriv(model)
@@ -178,7 +178,8 @@ if __name__ == '__main__':
     if 0:
         for i in range(10):
             inv.oneStep()
-            print(i, inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay - 1)))
+            print(i, inv.chi2(), inv.relrms(), pg.sum(inv.model()(0,
+                                                                  nlay - 1)))
     else:
         inv.run()
         print(inv.chi2(), inv.relrms(), pg.sum(inv.model()(0, nlay - 1)))
