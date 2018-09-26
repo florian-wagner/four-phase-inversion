@@ -12,7 +12,16 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from scipy.sparse import lil_matrix, save_npz
 
+# Settings
+fix_poro = False
+poro_min = 0.2
+poro_max = 0.4
+poro = 0.3 # startmodel if poro is estimated
 maxIter=50
+
+# Poro to rock content (inversion parameter)
+fr_min = 1 - poro_max
+fr_max = 1 - poro_min
 
 # Load meshes and data
 mesh = pg.load("mesh.bms")
@@ -28,9 +37,11 @@ ertScheme = pg.DataContainerERT("erttrue.dat")
 meshRST = pg.load("paraDomain.bms")
 meshERT = pg.load("meshERT.bms")
 
-# frtrue = np.load("true_model.npz")["fr"]
-# phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
-phi = 0.4
+if fix_poro:
+    frtrue = np.load("true_model.npz")["fr"]
+    phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
+else:
+    phi = poro
 
 fpm = FourPhaseModel(phi=phi)
 
@@ -46,19 +57,20 @@ rst.setMesh(meshRST)
 rst.fop.createRefinedForwardMesh()
 
 # Setup joint modeling and inverse operators
-JM = JointMod(meshRST, ert, rst, fpm, fix_poro=False)
+JM = JointMod(meshRST, ert, rst, fpm, fix_poro=fix_poro)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
 error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))
-inv = JointInv(JM, data, error, frmin=0.5, frmax=0.7, maxIter=maxIter)
+inv = JointInv(JM, data, error, frmin=fr_min, frmax=fr_max, maxIter=maxIter)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel.dat")
 rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
 fas, fis, fws, _ = fpm.all(rhostart, velstart)
 frs = np.ones_like(fas) - fpm.phi
-frs[frs <= 0.51] = 0.51
-frs[frs >= 0.69] = 0.69
+if not fix_poro:
+    frs[frs <= fr_min] = fr_min + 0.01
+    frs[frs >= fr_max] = fr_max - 0.01
 startmodel = np.concatenate((fws, fis, fas, frs))
 
 # Set result of conventional inversion as starting model

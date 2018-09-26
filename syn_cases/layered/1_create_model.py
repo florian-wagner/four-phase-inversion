@@ -34,26 +34,28 @@ for cell in mesh.cells():
 
 # pg.show(mesh, markers=True, savefig="mesh_with_markers.png")
 
-
 # rholayers = np.array([8000, 200000, 2000, 6000])
 # vellayers = np.array([1750, 3500, 2000, 4200])
 
 
 # Model creation based on pore fractions
-philayers = np.array([0.5, 0.4, 0.4, 0.3, 0.4])
+philayers = np.array([0.4, 0.3, 0.3, 0.2, 0.3])
 frlayers = 1 - philayers
-fwlayers = np.array([0.3, 0.2, 0.15, 0.02, 0.02])
-filayers = np.array([0.05, 0.1, 0.2, 0.27, 0.3])
+fwlayers = np.array([0.3, 0.18, 0.1, 0.02, 0.02])
+filayers = np.array([0.0, 0.1, 0.18, 0.18, 0.28])
 falayers = philayers - fwlayers - filayers
 
 print(falayers)
-assert (falayers >= 0).all()
+assert np.allclose(falayers.min(), 0.0)
 
 fpm = FourPhaseModel(phi = philayers)
 
-print(falayers + filayers + fwlayers)
+print(falayers + filayers + fwlayers + frlayers)
 rholayers = fpm.rho(fwlayers, filayers, falayers, frlayers)
 vellayers = 1. / fpm.slowness(fwlayers, filayers, falayers, frlayers)
+
+print(rholayers)
+print(vellayers)
 
 def to_mesh(data):
     return data[mesh.cellMarkers()]
@@ -67,7 +69,7 @@ veltrue = to_mesh(vellayers)
 fa = to_mesh(falayers)
 fi = to_mesh(filayers)
 fw = to_mesh(fwlayers)
-fr = 1 - fa - fi - fw
+fr = to_mesh(frlayers)
 
 assert np.allclose(fa + fi + fw + fr, 1)
 
