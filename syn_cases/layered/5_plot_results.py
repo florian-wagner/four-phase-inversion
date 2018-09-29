@@ -1,8 +1,14 @@
-from copy import copy
+#############################################
+# to find "invlib" in the main folder
+import sys, os
+sys.path.insert(0, os.path.abspath("../.."))
+#############################################
 
+from invlib import add_inner_title, rst_cov
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn
+
 from matplotlib import ticker
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.path import Path
@@ -15,8 +21,6 @@ from pygimli.mplviewer import addCoverageAlpha, drawModel
 
 seaborn.set_context("paper")
 seaborn.set(font="Noto Sans")
-
-
 
 seaborn.set(style="dark")
 plt.rcParams["image.cmap"] = "viridis"
@@ -62,22 +66,6 @@ long_labels = [
 ]
 
 
-def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
-    if size is None:
-        size = dict(size=plt.rcParams['legend.fontsize'], color=c)
-    else:
-        size = dict(size=size, color=c)
-    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
-                      frameon=False, **kwargs)
-    ax.add_artist(at)
-    if frame:
-        at.txt._text.set_path_effects(
-            [withStroke(foreground="w", linewidth=1)])
-        at.patch.set_ec("none")
-        at.patch.set_alpha(0.5)
-    return at
-
-
 def update_ticks(cb, log=False, label=""):
     if log:
         t = ticker.LogLocator(numticks=3)
@@ -114,56 +102,7 @@ grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.02, 0.1],
                  share_all=True, add_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
-ert_cov = np.loadtxt("ert_coverage.dat")
-rst_cov = np.loadtxt("rst_coverage.dat")
-
-# ert_cov = pg.interpolate(mesh, ert_cov, meshj.cellCenters()).array()
-# rst_cov = pg.interpolate(mesh, rst_cov, meshj.cellCenters()).array()
-
-# Extract convex hull
-
-points_all = np.column_stack((
-    pg.x(meshj.cellCenters()),
-    pg.y(meshj.cellCenters()),
-))
-
-points = points_all[np.nonzero(rst_cov)[0]]
-hull = ConvexHull(points)
-hull_path = Path(points[hull.vertices])
-
-covs = []
-for cell in mesh.cells():
-    if not hull_path.contains_point(points_all[cell.id()]):
-        covs.append(ert_cov[cell.id()])
-
-
-def joint_cov(ert_cov, rst_cov, mesh):
-    """ Joint ERT and RST coverage for visualization. """
-
-    points_all = np.column_stack((
-        pg.x(mesh.cellCenters()),
-        pg.y(mesh.cellCenters()),
-    ))
-    cov = np.zeros_like(ert_cov)
-    for cell in mesh.cells():
-        if hull_path.contains_point(points_all[cell.id()]):
-            cov[cell.id()] = 1
-        else:
-            cov[cell.id()] = 0
-
-    return cov
-
-
-cov = joint_cov(ert_cov, rst_cov, meshj)
-
-# for cell in mesh.cells():
-#     if 10**ert_cov[cell.id()] > 10**ert_cov.max() * 0.03:
-#         rst_cov[cell.id()] = 1
-#
-# cov[np.nonzero(rst_cov)[0]] = ert_cov.max()
-# cov[np.nonzero(rst_cov)[0]] = ert_cov.max()
-# cov[np.nonzero(rst_cov)[0]] += ert_cov.max()
-
+cov = rst_cov(meshj, np.loadtxt("rst_coverage.dat"))
 
 def draw(ax, mesh, model, **kwargs):
     model = np.array(model)
@@ -179,14 +118,6 @@ def draw(ax, mesh, model, **kwargs):
         model = np.ma.masked_where(kwargs["coverage"] == 0, model)
 
     gci = drawModel(ax, mesh, model, rasterized=True, **kwargs)
-    # if "coverage" in kwargs:
-    #     addCoverageAlpha(gci, kwargs["coverage"])
-
-    # for simplex in hull.simplices:
-    #     x = points[simplex, 0]
-    #     y = points[simplex, 1]
-    #     if (y < 0.1).all():
-    #         ax.plot(x, y, 'w-', lw=1.5, alpha=0.5)
 
     return gci
 

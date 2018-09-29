@@ -132,19 +132,21 @@ class FourPhaseModel():
 
         return fa, fi, fw, array_mask
 
-    def show(self, mesh, rho, vel):
-        fa, fi, fw, mask = self.all(rho, vel, mask=True)
+    def show(self, mesh, rho, vel, mask=True, **kwargs):
+        fa, fi, fw, mask = self.all(rho, vel, mask=mask)
 
         fig, axs = plt.subplots(3, 2, figsize=(16, 10))
         pg.show(mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
-                logScale=False, cmap="Blues")
+                logScale=False, cmap="Blues", **kwargs)
         pg.show(mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
-                logScale=False, cmap="Purples")
+                logScale=False, cmap="Purples", **kwargs)
         pg.show(mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
-                logScale=False, cmap="Greens")
+                logScale=False, cmap="Greens", **kwargs)
         pg.show(mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
-                cmap="Spectral_r", logScale=True)
-        pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False)
+                cmap="Spectral_r", logScale=True, **kwargs)
+        pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False, hold=True, **kwargs)
+        pg.show(mesh, self.phi, ax=axs[2, 1], label="Porosity", logScale=False, hold=True, **kwargs)
+        return fig, axs
 
 
 def testFourPhaseModel():
