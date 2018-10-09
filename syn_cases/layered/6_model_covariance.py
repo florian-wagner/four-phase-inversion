@@ -51,7 +51,6 @@ def jacobian4PM(mesh, schemeERT, schemeSRT, Fx, df=0.01,
     print("ready.")
     return jacERT, jacSRT
 
-1/0
 
 # load synthetic mesh (no boundary!)
 mesh = pg.load("mesh.bms")
@@ -71,9 +70,11 @@ Fsyn = np.vstack((fw, fi, fa, fr))
 # dataERT, dataSRT = forward4PM(mesh, shmERT, shmSRT, Fsyn)
 jacERT, jacSRT = jacobian4PM(mesh, shmERT, shmSRT, Fsyn)
 jacJoint = np.vstack((jacERT, jacSRT))
+jacJoint.dump("jacJoint.npy")
 print(jacERT.shape, jacSRT.shape, jacJoint.shape)
 JTJ = jacJoint.T.dot(jacJoint)
 MCM = np.linalg.inv(JTJ)
+MCM.dump("MCM.npz")
 plt.matshow(MCM)
 # %%
 npar, nreg = Fsyn.shape
@@ -85,6 +86,7 @@ for i in range(nreg):
 jacJointConst = np.vstack((jacJoint, gMat*1000))
 JTJconst = jacJointConst.T.dot(jacJointConst)
 MCMconst = np.linalg.inv(JTJconst)
+MCMconst.dump("MCMconst.npz")
 plt.matshow(MCMconst)
 # %% extract variances and scale MCM to diagonal
 varVG = np.sqrt(np.diag(MCM))
@@ -92,3 +94,5 @@ print(varVG.reshape((Fsyn.shape)))
 di = (1.0 / varVG)
 MCMs = di.reshape(len(di), 1) * MCM * di
 plt.matshow(MCMs, cmap=plt.cm.bwr, vmin=-1, vmax=1)
+MCMs.dump("MCMs.npz")
+plt.matshow(varVG.reshape((Fsyn.shape)))

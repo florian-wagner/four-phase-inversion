@@ -10,7 +10,6 @@ import pygimli as pg
 from invlib import FourPhaseModel, JointMod, JointInv
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
-from scipy.sparse import lil_matrix, save_npz
 
 # Settings
 fix_poro = False
