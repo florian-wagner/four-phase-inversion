@@ -14,10 +14,10 @@ import pygimli.meshtools as mt
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
-from invlib import FourPhaseModel
+from invlib import FourPhaseModel, JointMod, JointInv
 
 
-def forward4PM(mesh, schemeERT, schemeSRT, Fx):
+def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     """Forward response of fx."""
     ert = ERTManager()
     srt = Refraction()
@@ -25,25 +25,33 @@ def forward4PM(mesh, schemeERT, schemeSRT, Fx):
     fpm = FourPhaseModel(phi=phi)
     rho = fpm.rho(*Fx)
     slo = fpm.slowness(*Fx)
-    rhoVec = rho[mesh.cellMarkers()]  # needs to be copied!
-    dataERT = ert.simulate(mesh, rhoVec, schemeERT)
-    sloVec = slo[mesh.cellMarkers()]
-    dataSRT = srt.simulate(mesh, sloVec, schemeSRT)
+    if len(rho < meshRST.cellCount()):
+        rho = np.append(rho, np.mean(rho)) # outer region
+        rhoVec = rho[meshERT.cellMarkers()]  # needs to be copied!
+        sloVec = slo[meshRST.cellMarkers()]
+    else:
+        rhoVec = rho
+        sloVec = slo
+
+    dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
+    dataSRT = srt.simulate(meshRST, sloVec, schemeSRT)
     return dataERT, dataSRT
 
 
-def jacobian4PM(mesh, schemeERT, schemeSRT, Fx, df=0.01,
+def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
                 errorERT=0.03, errorSRT=0.0005):
     """Jacobian matrices by brute force."""
-    dataERT, dataSRT = forward4PM(mesh, schemeERT, schemeSRT, Fx)
+    dataERT, dataSRT = forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx)
     npar = np.prod(Fsyn.shape)
     jacERT = np.zeros((dataERT.size(), npar))
     jacSRT = np.zeros((dataSRT.size(), npar))
     for i in range(npar):
+        print("\n")
+        pg.boxprint(f"{i+1} / {npar}")
         print(Fx.flat[i], end=" ")
         Fx1 = np.copy(Fx)
         Fx1.flat[i] += df
-        dataERT1, dataSRT1 = forward4PM(mesh, schemeERT, schemeSRT, Fx1)
+        dataERT1, dataSRT1 = forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx1)
         jacERT[:, i] = (np.log(dataERT1('rhoa')) -
                         np.log(dataERT('rhoa'))) / df / errorERT
         jacSRT[:, i] = (dataSRT1('t') - dataSRT('t')) / df / errorSRT
@@ -54,9 +62,23 @@ def jacobian4PM(mesh, schemeERT, schemeSRT, Fx, df=0.01,
 
 # load synthetic mesh (no boundary!)
 mesh = pg.load("mesh.bms")
+meshRST = pg.load("paraDomain.bms")
+meshERT = pg.load("meshERT.bms")
+
+# for cell in meshRST.cells():
+#     NN = mesh.findCell(cell.center())
+#     cell.setMarker(mesh.cellMarkers()[NN.id()])
+#
+# for cell in meshERT.cells():
+#     NN = mesh.findCell(cell.center())
+#     if NN:
+#         cell.setMarker(mesh.cellMarkers()[NN.id()])
+#     else:
+#         cell.setMarker(len(np.unique(mesh.cellMarkers()))) # triangle boundary
+
 # create scheme files
 sensors = np.load("sensors.npy")
-shmERT = pb.createData(sensors, "dd")
+shmERT = pg.DataContainerERT("erttrue.dat")
 shmSRT = createRAData(sensors)
 # create synthetic model starting with phi
 phi = np.array([0.4, 0.3, 0.3, 0.2, 0.3])
@@ -65,17 +87,65 @@ fw = np.array([0.3, 0.18, 0.1, 0.02, 0.02])
 fi = np.array([0.0, 0.1, 0.18, 0.18, 0.28])
 fa = phi - fw - fi
 fa[np.isclose(fa, 0.0)] = 0.0
+
+def jac(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01, errorERT=0.03,
+        errorSRT=0.0005):
+    """ Calculate jacobian as during inversion. """
+    # Setup managers and equip with meshes
+    ert = ERTManager()
+    ert.setMesh(meshERT)
+    ert.setData(shmERT)
+    ert.fop.createRefinedForwardMesh()
+
+    rst = Refraction("tttrue.dat", verbose=True)
+    ttData = rst.dataContainer
+    rst.setMesh(meshRST)
+    rst.fop.createRefinedForwardMesh()
+
+    # Setup joint modeling and inverse operators
+    fpm = FourPhaseModel(phi=phi)
+    JM = JointMod(meshRST, ert, rst, fpm, fix_poro=False)
+
+    if len(Fx) < meshRST.cellCount():
+        data = Fx[:,meshRST.cellMarkers()].flatten()
+    else:
+        data = Fx
+
+    JM.createJacobian(data)
+
+    def block2numpy(mat):
+        pg.tic()
+        A = np.zeros((mat.rows(), mat.cols()))
+        for i in range(mat.rows()):
+            A[i] = mat.row(i)
+        pg.toc()
+        return A
+
+    J = block2numpy(JM.jac)
+    error = pg.cat(rst.relErrorVals(ttData), shmERT("err"))
+
+    return J / error.array()[:, np.newaxis]
+
+
+# Load joint inversion result
+joint = np.load("joint_inversion.npz")
+fa, fi, fw, fr = joint["fa"], joint["fi"], joint["fw"], joint["fr"]
 Fsyn = np.vstack((fw, fi, fa, fr))
+jacJoint = jac(meshERT, meshRST, shmERT, shmSRT, Fsyn)
+jacJoint.dump("jacJoint2.npy")
+
 # %% compute forward response and jacobians
 # dataERT, dataSRT = forward4PM(mesh, shmERT, shmSRT, Fsyn)
-jacERT, jacSRT = jacobian4PM(mesh, shmERT, shmSRT, Fsyn)
-jacJoint = np.vstack((jacERT, jacSRT))
-jacJoint.dump("jacJoint.npy")
-print(jacERT.shape, jacSRT.shape, jacJoint.shape)
-JTJ = jacJoint.T.dot(jacJoint)
-MCM = np.linalg.inv(JTJ)
-MCM.dump("MCM.npz")
-plt.matshow(MCM)
+# jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
+# jacJoint = np.vstack((jacSRT, jacERT))
+# print(jacERT.shape, jacSRT.shape, jacJoint.shape)
+# jacJoint.dump("jacJoint.npy")
+# pg.tic("Calculating JTJ")
+# JTJ = jacJoint.T.dot(jacJoint)
+# pg.toc()
+# MCM = np.linalg.inv(JTJ)
+# MCM.dump("MCM.npz")
+# plt.matshow(MCM)
 # %%
 npar, nreg = Fsyn.shape
 gMat = np.zeros((nreg, npar*nreg))
@@ -83,9 +153,26 @@ for i in range(nreg):
     for j in range(npar):
         gMat[i, j*nreg+i] = 1.0
 # %%
+pg.tic("Calculating JTJ")
 jacJointConst = np.vstack((jacJoint, gMat*1000))
 JTJconst = jacJointConst.T.dot(jacJointConst)
+pg.toc()
+
+import gc, time
+del jacJointConst, gMat
+time.sleep(1)
+gc.collect()
+time.sleep(1)
+
+pg.tic("Matrix inversion")
 MCMconst = np.linalg.inv(JTJconst)
+pg.toc()
+
+del JTJconst
+time.sleep(1)
+gc.collect()
+time.sleep(1)
+
 MCMconst.dump("MCMconst.npz")
 plt.matshow(MCMconst)
 # %% extract variances and scale MCM to diagonal
