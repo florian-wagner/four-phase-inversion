@@ -46,8 +46,9 @@ def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
         size = dict(size=plt.rcParams['legend.fontsize'], color=c)
     else:
         size = dict(size=size, color=c)
+
     at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
-                      frameon=False, **kwargs)
+                      frameon=False, bbox_transform=ax.transAxes, **kwargs)
     ax.add_artist(at)
     if frame:
         at.txt._text.set_path_effects(
@@ -55,3 +56,27 @@ def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
         at.patch.set_ec("none")
         at.patch.set_alpha(0.5)
     return at
+
+def set_style(fs=8, style="seaborn-ticks"):
+    """ Figure cosmetics for publications. """
+    from matplotlib import rcParams
+    import matplotlib.pyplot as plt
+    rcParams['pdf.fonttype'] = 42
+
+    plt.style.use(style)
+
+    plt.rcParams['font.family'] = "Roboto"
+    plt.rcParams['xtick.minor.pad'] = 1
+    plt.rcParams['ytick.minor.pad'] = 1
+
+    plt.rcParams['font.weight'] = 'regular'
+    plt.rcParams['font.size'] = fs
+    plt.rcParams['axes.labelsize'] = fs
+    plt.rcParams['axes.titlepad'] = 4
+    plt.rcParams['axes.labelweight'] = 'regular'
+    plt.rcParams['xtick.labelsize'] = fs
+    plt.rcParams['ytick.labelsize'] = fs
+    plt.rcParams['legend.fontsize'] = fs
+    plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["savefig.bbox"] = "tight"
+    plt.rcParams["savefig.pad_inches"] = 0
