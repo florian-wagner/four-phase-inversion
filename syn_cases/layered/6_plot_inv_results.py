@@ -102,7 +102,7 @@ grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.03, 0.03],
                  share_all=True, add_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
-cov = rst_cov(meshj, np.loadtxt("rst_coverage_%s.dat" % scenario))
+cov = rst_cov(meshj, np.loadtxt("rst_coverage.dat"))
 
 fre = 1 - fwe - fae - fie
 

@@ -23,6 +23,6 @@ else:
 
 # Save some stuff
 fpm = FourPhaseModel(phi=phi)
-fae, fie, fwe, maske = fpm.all(resinv.array(), vest.array())
+fae, fie, fwe, maske = fpm.all(resinv, vest)
 np.savez("conventional_%s.npz" % scenario, vel=np.array(vest),
          rho=np.array(resinv), fa=fae, fi=fie, fw=fwe, mask=maske)

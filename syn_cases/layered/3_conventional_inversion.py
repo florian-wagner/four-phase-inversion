@@ -1,8 +1,3 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
 
 
 import numpy as np
@@ -11,7 +6,6 @@ import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 
-from invlib import FourPhaseModel
 from pygimli.physics.traveltime.ratools import createGradientModel2D
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
@@ -35,14 +29,6 @@ for cell in meshRST.cells():
 
 pg.show(meshRST)
 meshRST.save("paraDomain.bms")
-
-if len(sys.argv) > 1:
-    scenario = "Fig2"
-    phi = 0.3 # Porosity assumed to calculate fi, fa, fw with 4PM
-else:
-    scenario = "Fig1"
-    frtrue = np.load("true_model.npz")["fr"]
-    phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
 
 ############
 # Settings
@@ -72,8 +58,6 @@ vest = rst.invert(ttData, zWeight=1, startModel=startmodel, maxIter=maxIter, lam
 print("RST chi:", rst.inv.chi2())
 print("RST rms:", rst.inv.relrms())
 
-# Save some stuff
-fpm = FourPhaseModel(phi=phi)
-fae, fie, fwe, maske = fpm.all(resinv.array(), vest.array())
-np.savez("conventional_%s.npz" % scenario, vel=np.array(vest), rho=np.array(resinv), fa=fae, fi=fie, fw=fwe, mask=maske)
-rst.rayCoverage().save("rst_coverage_%s.dat" % scenario)
+rst.rayCoverage().save("rst_coverage.dat")
+np.savetxt("res_conventional.dat", resinv)
+np.savetxt("vel_conventional.dat", vest)

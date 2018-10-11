@@ -60,10 +60,9 @@ class FourPhaseModel():
         return fi
 
     def air(self, rho, v):
-        # fa = ((self.vi * self.va / (self.vi - self.va) * (
-        #     1. / v - self.fr / self.vr - self.phi / self.vi - self.water(rho) *
-        #     (1. / self.vw - 1. / self.vi))))
-        fa = 1 - self.fr - self.ice(rho, v) - self.water(rho)
+        fa = ((self.vi * self.va / (self.vi - self.va) * (
+            1. / v - self.fr / self.vr - self.phi / self.vi - self.water(rho) *
+            (1. / self.vw - 1. / self.vi))))
         return fa
 
     def rho(self, fw, fi, fa, fr=None):
@@ -117,14 +116,13 @@ class FourPhaseModel():
         fw = self.water(rho)
 
         # Check that fractions are between 0 and 1
-        array_mask = np.array( ((fa < 0) | (fa > 1 - self.fr))
-                             | ((fi < 0) | (fi > 1 - self.fr))
-                             | ((fw < 0) | (fw > 1 - self.fr))
-                             | ((self.fr < 0) | (self.fr > 1))
-        )
+        array_mask = np.array(((fa < 0) | (fa > 1 - self.fr))
+                              | ((fi < 0) | (fi > 1 - self.fr))
+                              | ((fw < 0) | (fw > 1 - self.fr))
+                              | ((self.fr < 0) | (self.fr > 1)))
         if array_mask.sum() > 1:
-            print("WARNING: %d of %d fraction values are unphysical." %
-                  (int(array_mask.sum()), len(array_mask.ravel())))
+            print("WARNING: %d of %d fraction values are unphysical." % (int(
+                array_mask.sum()), len(array_mask.ravel())))
         if mask:
             fa = np.ma.array(fa, mask=array_mask)
             fi = np.ma.array(fi, mask=array_mask)
@@ -144,8 +142,10 @@ class FourPhaseModel():
                 logScale=False, cmap="Greens", **kwargs)
         pg.show(mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
                 cmap="Spectral_r", logScale=True, **kwargs)
-        pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False, hold=True, **kwargs)
-        pg.show(mesh, self.phi, ax=axs[2, 1], label="Porosity", logScale=False, hold=True, **kwargs)
+        pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False,
+                hold=True, **kwargs)
+        pg.show(mesh, self.phi, ax=axs[2, 1], label="Porosity", logScale=False,
+                hold=True, **kwargs)
         return fig, axs
 
 
