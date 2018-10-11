@@ -65,16 +65,16 @@ mesh = pg.load("mesh.bms")
 meshRST = pg.load("paraDomain.bms")
 meshERT = pg.load("meshERT.bms")
 
-# for cell in meshRST.cells():
-#     NN = mesh.findCell(cell.center())
-#     cell.setMarker(mesh.cellMarkers()[NN.id()])
-#
-# for cell in meshERT.cells():
-#     NN = mesh.findCell(cell.center())
-#     if NN:
-#         cell.setMarker(mesh.cellMarkers()[NN.id()])
-#     else:
-#         cell.setMarker(len(np.unique(mesh.cellMarkers()))) # triangle boundary
+for cell in meshRST.cells():
+    NN = mesh.findCell(cell.center())
+    cell.setMarker(mesh.cellMarkers()[NN.id()])
+
+for cell in meshERT.cells():
+    NN = mesh.findCell(cell.center())
+    if NN:
+        cell.setMarker(mesh.cellMarkers()[NN.id()])
+    else:
+        cell.setMarker(len(np.unique(mesh.cellMarkers()))) # triangle boundary
 
 # create scheme files
 sensors = np.load("sensors.npy")
@@ -128,23 +128,23 @@ def jac(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01, errorERT=0.03,
 
 
 # Load joint inversion result
-joint = np.load("joint_inversion.npz")
-fa, fi, fw, fr = joint["fa"], joint["fi"], joint["fw"], joint["fr"]
+# joint = np.load("joint_inversion.npz")
+# fa, fi, fw, fr = joint["fa"], joint["fi"], joint["fw"], joint["fr"]
 Fsyn = np.vstack((fw, fi, fa, fr))
-jacJoint = jac(meshERT, meshRST, shmERT, shmSRT, Fsyn)
-jacJoint.dump("jacJoint2.npy")
+# jacJoint = jac(meshERT, meshRST, shmERT, shmSRT, Fsyn)
+# jacJoint.dump("jacJoint2.npy")
 
 # %% compute forward response and jacobians
-# dataERT, dataSRT = forward4PM(mesh, shmERT, shmSRT, Fsyn)
-# jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
-# jacJoint = np.vstack((jacSRT, jacERT))
-# print(jacERT.shape, jacSRT.shape, jacJoint.shape)
-# jacJoint.dump("jacJoint.npy")
-# pg.tic("Calculating JTJ")
-# JTJ = jacJoint.T.dot(jacJoint)
-# pg.toc()
-# MCM = np.linalg.inv(JTJ)
-# MCM.dump("MCM.npz")
+# dataERT, dataSRT = forward4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
+jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
+jacJoint = np.vstack((jacSRT, jacERT))
+print(jacERT.shape, jacSRT.shape, jacJoint.shape)
+jacJoint.dump("jacJoint.npy")
+pg.tic("Calculating JTJ")
+JTJ = jacJoint.T.dot(jacJoint)
+pg.toc()
+MCM = np.linalg.inv(JTJ)
+MCM.dump("MCM.npz")
 # plt.matshow(MCM)
 # %%
 npar, nreg = Fsyn.shape
@@ -158,20 +158,9 @@ jacJointConst = np.vstack((jacJoint, gMat*1000))
 JTJconst = jacJointConst.T.dot(jacJointConst)
 pg.toc()
 
-import gc, time
-del jacJointConst, gMat
-time.sleep(1)
-gc.collect()
-time.sleep(1)
-
 pg.tic("Matrix inversion")
 MCMconst = np.linalg.inv(JTJconst)
 pg.toc()
-
-del JTJconst
-time.sleep(1)
-gc.collect()
-time.sleep(1)
 
 MCMconst.dump("MCMconst.npz")
 plt.matshow(MCMconst)
