@@ -12,8 +12,6 @@ import pygimli as pg
 import pygimli.meshtools as mt
 from invlib import FourPhaseModel
 
-# matplotlib.use("Agg")
-
 # Model creation
 world = mt.createWorld([0, -30], [150, 0], layers=[-5, -15], worldMarker=False)
 block = mt.createPolygon([[60, -5], [90, -5], [100, -15], [50, -15]],
@@ -32,12 +30,6 @@ for cell in mesh.cells():
 for cell in mesh.cells():
     cell.setMarker(cell.marker() - 1)
 
-# pg.show(mesh, markers=True, savefig="mesh_with_markers.png")
-
-# rholayers = np.array([8000, 200000, 2000, 6000])
-# vellayers = np.array([1750, 3500, 2000, 4200])
-
-
 # Model creation based on pore fractions
 philayers = np.array([0.4, 0.3, 0.3, 0.2, 0.3])
 frlayers = 1 - philayers
@@ -45,8 +37,9 @@ fwlayers = np.array([0.3, 0.18, 0.1, 0.02, 0.02])
 filayers = np.array([0.0, 0.1, 0.18, 0.18, 0.28])
 falayers = philayers - fwlayers - filayers
 
+falayers[np.isclose(falayers, 0.0)] = 0.0
+
 print(falayers)
-assert np.allclose(falayers.min(), 0.0)
 
 fpm = FourPhaseModel(phi = philayers)
 
@@ -72,10 +65,6 @@ fw = to_mesh(fwlayers)
 fr = to_mesh(frlayers)
 
 assert np.allclose(fa + fi + fw + fr, 1)
-
-fpm.fr = fr
-fpm.phi = 1 - fr
-fpm.show(mesh, rhotrue, veltrue)
 
 np.savez("true_model.npz", rho=rhotrue, vel=veltrue, fa=fa, fi=fi, fw=fw, fr=fr)
 

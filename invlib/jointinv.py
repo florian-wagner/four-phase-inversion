@@ -36,7 +36,7 @@ class JointInv(LSQRInversion):
 
         # Regularization strength
         self.setLambda(lam)
-        self.setDeltaPhiAbortPercent(0.5)
+        self.setDeltaPhiAbortPercent(0.25)
 
         self.forwardOperator().createConstraints() # Important!
         ones = pg.RVector(self.forwardOperator()._I.rows(), 1.0)
