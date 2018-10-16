@@ -11,10 +11,12 @@ inv:
 case1:
 	python ./4_apply_4PM.py
 	python ./5_joint_inversion.py
+	python ./6_plot_inv_results.py
 
 case2:
 	python ./4_apply_4PM.py "Fig2"
 	python ./5_joint_inversion.py "Fig2"
+	python ./6_plot_inv_results.py "Fig2"
 
 show:
 	python ./6_plot_inv_results.py

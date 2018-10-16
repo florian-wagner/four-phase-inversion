@@ -34,7 +34,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
         sloVec = slo
 
     dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
-    dataSRT = srt.simulate(meshRST, sloVec, schemeSRT)
+    dataSRT = srt.simulate(meshRST.createSecondaryNodes(5), sloVec, schemeSRT)
     return dataERT, dataSRT
 
 

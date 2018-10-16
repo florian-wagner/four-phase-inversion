@@ -64,7 +64,7 @@ ert.fop.createRefinedForwardMesh()
 
 rst = Refraction("tttrue.dat", verbose=True)
 ttData = rst.dataContainer
-rst.setMesh(meshRST)
+rst.setMesh(meshRST, secNodes=5)
 rst.fop.createRefinedForwardMesh()
 
 # Setup joint modeling and inverse operators
