@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 #############################################
 
 from invlib import add_inner_title, rst_cov, set_style
-fs = 6
+fs = 5.5
 set_style(fs, style="seaborn-dark")
 
 import matplotlib.pyplot as plt
@@ -91,7 +91,7 @@ def minmax(data):
         min = tmp.min()
     if np.max(tmp) > 10 and np.max(tmp) < 1e4:
         return "min: %d\nmax: %d" % (min, tmp.max())
-    if np.max(tmp) > 1e5:
+    if np.max(tmp) > 1e4:
         return "min: %.1e\nmax: %.1e" % (min, tmp.max())
     else:
         return "min: %.2f\nmax: %.2f" % (min, tmp.max())
@@ -191,6 +191,5 @@ for ax, label in zip(grid.axes_column[0], long_labels):
     ax.set_ylabel("Depth (m)", labelpad=1)
     add_inner_title(ax, label, loc=3)
 
-fig.tight_layout()
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("%s_two_columns.pdf" % scenario, dpi=300, bbox_inches="tight", pad_inches=0.0)

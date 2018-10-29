@@ -49,12 +49,16 @@ def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
 
     at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
                       frameon=False, bbox_transform=ax.transAxes, **kwargs)
-    ax.add_artist(at)
+
     if frame:
-        at.txt._text.set_path_effects(
-            [withStroke(foreground="w", linewidth=1)])
-        at.patch.set_ec("none")
-        at.patch.set_alpha(0.5)
+        at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+
+    ax.add_artist(at)
+    # if frame:
+    #     at.txt._text.set_path_effects(
+    #         [withStroke(foreground="w", linewidth=1)])
+    #     at.patch.set_ec("none")
+    #     at.patch.set_alpha(0.5)
     return at
 
 def set_style(fs=8, style="seaborn-ticks"):

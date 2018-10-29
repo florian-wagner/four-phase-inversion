@@ -49,7 +49,7 @@ print("ERT rms:", ert.inv.relrms())
 # Seismic Inversion
 rst = Refraction("tttrue.dat", verbose=True)
 ttData = rst.dataContainer
-rst.setMesh(meshRST, secNodes=5)
+rst.setMesh(meshRST, secNodes=3)
 
 veltrue = np.loadtxt("veltrue.dat")
 startmodel = createGradientModel2D(ttData, meshRST, np.min(veltrue), np.max(veltrue))

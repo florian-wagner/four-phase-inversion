@@ -1,5 +1,5 @@
 clean:
-	rm -rf *.bmat *.png *.npy *.npz *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
+	rm -rf *.bmat *.png *.npy *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
 
 calc:
 	python ./1_create_model.py
