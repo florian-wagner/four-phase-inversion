@@ -53,8 +53,9 @@ ttScheme = createRAData(sensors)
 rst = Refraction(verbose=True)
 
 error = 0.0005 # seconds
-ttData = rst.simulate(meshRSTFWD, 1. / vel, ttScheme, noisify=True,
-                      noiseLevel=0.0, noiseAbs=error)
+meshRSTFWD.createSecondaryNodes(3)
+ttData = rst.simulate(meshRSTFWD, 1. / vel, ttScheme,
+                      noisify=True, noiseLevel=0.0, noiseAbs=error)
 ttData.set("err", np.ones(ttData.size()) * error)
 
 rst.setData(ttData)

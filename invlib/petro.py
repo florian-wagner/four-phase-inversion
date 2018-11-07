@@ -6,8 +6,8 @@ import pygimli as pg
 
 class FourPhaseModel():
 
-    def __init__(self, vw=1500., va=300., vi=3500., vr=6000, a=1., n=2., m=2,
-                 phi=0.5, rhow=150.):
+    def __init__(self, vw=1500., va=330., vi=3500., vr=5500, a=1., n=2., m=1.3,
+                 phi=0.4, rhow=150.):
         """Four phase model (4PM) after Hauck et al. (2011). Estimates fraction
         of ice, air and water from electrical bulk resistivity and seismic
         velocity.
@@ -21,17 +21,17 @@ class FourPhaseModel():
         vi : float or array type
             Velocity of ice in m/s (the default is 3500.).
         vr : float or array type
-            Velocity of rock in m/s (the default is 6000).
+            Velocity of rock in m/s (the default is 5000).
         a : float or array type
-            Archie parameter `a` (the default is 2).
+            Archie parameter `a` (the default is 1).
         n : float or array type
-            Archie parameter `n` (the default is 1).
+            Archie parameter `n` (the default is 2).
         m : float or array type
-            Archie parameter `m` (the default is 1).
+            Archie parameter `m` (the default is 1.3).
         phi : float or array type
-            Porosity `phi` (the default is 0.5).
+            Porosity `phi` (the default is 0.4).
         rhow : float or array type
-            Water resistivity `rhow` (the default is 100).
+            Water resistivity `rhow` (the default is 150).
         """
 
         # Velocities of water, air, ice and rock (m/s)
@@ -51,18 +51,21 @@ class FourPhaseModel():
     def water(self, rho):
         fw = ((self.a * self.rhow * self.phi**self.n) /
               (rho * self.phi**self.m))**(1 / self.n)
+        fw[np.isclose(fw, 0)] = 0
         return fw
 
     def ice(self, rho, v):
         fi = (self.vi * self.va / (self.va - self.vi) * (
             1. / v - self.fr / self.vr - self.phi / self.va - self.water(rho) *
             (1. / self.vw - 1. / self.va)))
+        fi[np.isclose(fi, 0)] = 0
         return fi
 
     def air(self, rho, v):
         fa = ((self.vi * self.va / (self.vi - self.va) * (
             1. / v - self.fr / self.vr - self.phi / self.vi - self.water(rho) *
             (1. / self.vw - 1. / self.vi))))
+        fa[np.isclose(fa, 0)] = 0
         return fa
 
     def rho(self, fw, fi, fa, fr=None):
@@ -123,10 +126,15 @@ class FourPhaseModel():
         if array_mask.sum() > 1:
             print("WARNING: %d of %d fraction values are unphysical." % (int(
                 array_mask.sum()), len(array_mask.ravel())))
+        # if mask:
+        #     fa = np.ma.array(fa, mask=array_mask)
+        #     fi = np.ma.array(fi, mask=array_mask)
+        #     fw = np.ma.array(fw, mask=array_mask)
+
         if mask:
-            fa = np.ma.array(fa, mask=array_mask)
-            fi = np.ma.array(fi, mask=array_mask)
-            fw = np.ma.array(fw, mask=array_mask)
+            fa = np.ma.array(fa, mask=(fa < 0) | (fa > 1 - self.fr))
+            fi = np.ma.array(fi, mask=(fi < 0) | (fi > 1 - self.fr))
+            fw = np.ma.array(fw, mask=(fw < 0) | (fw > 1 - self.fr))
 
         return fa, fi, fw, array_mask
 

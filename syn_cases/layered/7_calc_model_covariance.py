@@ -22,7 +22,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     ert = ERTManager()
     srt = Refraction()
     phi = 1 - Fx[-1]
-    fpm = FourPhaseModel(phi=phi)
+    fpm = FourPhaseModel(phi=phi, m=1.3)
     rho = fpm.rho(*Fx)
     slo = fpm.slowness(*Fx)
     if len(rho < meshRST.cellCount()):
@@ -34,7 +34,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
         sloVec = slo
 
     dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
-    dataSRT = srt.simulate(meshRST, sloVec, schemeSRT)
+    dataSRT = srt.simulate(meshRST.createSecondaryNodes(0), sloVec, schemeSRT)
     return dataERT, dataSRT
 
 
@@ -107,7 +107,7 @@ def jac(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01, errorERT=0.03,
     JM = JointMod(meshRST, ert, rst, fpm, fix_poro=False)
 
     if len(Fx) < meshRST.cellCount():
-        data = Fx[:,meshRST.cellMarkers()].flatten()
+        data = Fx[:, meshRST.cellMarkers()].flatten()
     else:
         data = Fx
 

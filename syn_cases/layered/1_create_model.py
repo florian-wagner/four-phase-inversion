@@ -41,7 +41,7 @@ falayers[np.isclose(falayers, 0.0)] = 0.0
 
 print(falayers)
 
-fpm = FourPhaseModel(phi = philayers)
+fpm = FourPhaseModel(phi=philayers)
 
 print(falayers + filayers + fwlayers + frlayers)
 rholayers = fpm.rho(fwlayers, filayers, falayers, frlayers)
