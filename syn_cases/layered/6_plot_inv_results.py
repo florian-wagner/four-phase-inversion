@@ -185,11 +185,12 @@ for ax in grid.axes_column[-1]:
 for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)")
 
-for ax, label in zip(grid.axes_column[0], long_labels):
+for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     ax.set_yticks([-5, -15, -30])
     ax.set_yticklabels([" 5", "15", "30\n"])
     ax.set_ylabel("Depth (m)", labelpad=1)
-    add_inner_title(ax, label, loc=3)
+    color = "k" if i not in (1, 5) else "w"
+    add_inner_title(ax, label, loc=3, c=color)
 
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("%s_two_columns.pdf" % scenario, dpi=300, bbox_inches="tight", pad_inches=0.0)
