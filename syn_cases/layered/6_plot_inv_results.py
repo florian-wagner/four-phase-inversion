@@ -135,10 +135,10 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
     ims = []
     for j, ax in enumerate(row):
         coverage = np.ones(mesh.cellCount()) if j is 0 else cov
-        color = "k" if j is 0 and i not in (1, 5) else "w"
+        color = "k" if j is 0 and i not in (1, 3, 5) else "w"
         ims.append(draw(ax, meshs[j], data[j], cmap=cmap, **lims,
                    logScale=logScale, coverage=coverage))
-        ax.text(0.98, 0.08, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
+        ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
                 ha="right", color=color)
     cb = fig.colorbar(ims[0], cax=grid.cbar_axes[i])
     update_ticks(cb, log=logScale, label=label, **lims)
@@ -168,12 +168,18 @@ if scenario == "Fig2":
 for ax, lab in zip(grid.axes_column[2], labs):
     add_inner_title(ax, lab, loc=3, size=fs, frame=False, c="w")
 
+from string import ascii_uppercase
 for i, ax in enumerate(grid.axes_all):
-    ax.set_facecolor("0.5")
-    ax.plot(sensors, np.zeros_like(sensors), 'kv', ms=1.5)
+    ax.set_facecolor("0.45")
+    ax.plot(sensors, np.zeros_like(sensors), marker="v", lw=0, color="k", ms=1.2)
     ax.set_aspect(1.5)
     ax.tick_params(axis='both', which='major')
     ax.set_xticks([25, 50, 75, 100, 125])
+    if i in [9,15]:
+        color = "k"
+    else:
+        color = "w"
+    add_inner_title(ax, ascii_uppercase[i], loc=2, frame=False, c=color, fw="bold")
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -189,8 +195,8 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     ax.set_yticks([-5, -15, -30])
     ax.set_yticklabels([" 5", "15", "30\n"])
     ax.set_ylabel("Depth (m)", labelpad=1)
-    color = "k" if i not in (1, 5) else "w"
-    add_inner_title(ax, label, loc=3, c=color)
+    color = "k" if i not in (1, 3, 5) else "w"
+    add_inner_title(ax, label, loc=3, c=color, frame=False)
 
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("%s_two_columns.pdf" % scenario, dpi=300, bbox_inches="tight", pad_inches=0.0)

@@ -40,23 +40,26 @@ def rst_cov(mesh, cov):
     return np.array(covs)
 
 
-def add_inner_title(ax, title, loc, size=None, c="k", frame=True, **kwargs):
+def add_inner_title(ax, title, loc, size=None, c="k", frame=True, fw="semibold", **kwargs):
     """ Add inner title to plot. """
     if size is None:
-        size = dict(size=plt.rcParams['legend.fontsize'], color=c)
+        size = dict(size=plt.rcParams['legend.fontsize'], color=c, fontweight=fw)
     else:
-        size = dict(size=size, color=c)
+        size = dict(size=size, color=c, fontweight=fw)
 
-    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.4,
+    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.2,
                       frameon=False, bbox_transform=ax.transAxes, **kwargs)
 
-    if frame:
-        at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+    # if frame:
+    #     at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
 
     ax.add_artist(at)
     # if frame:
-    #     at.txt._text.set_path_effects(
-    #         [withStroke(foreground="w", linewidth=1)])
+    #     if c == "w":
+    #         color = "k"
+    #     else:
+    #         color = "w"
+    #     at.txt._text.set_path_effects([withStroke(foreground=color, linewidth=.75)])
     #     at.patch.set_ec("none")
     #     at.patch.set_alpha(0.5)
     return at
