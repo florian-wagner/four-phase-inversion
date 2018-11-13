@@ -25,16 +25,13 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     fpm = FourPhaseModel(phi=phi, m=1.3)
     rho = fpm.rho(*Fx)
     slo = fpm.slowness(*Fx)
-    if len(rho < meshRST.cellCount()):
-        rho = np.append(rho, np.mean(rho)) # outer region
-        rhoVec = rho[meshERT.cellMarkers()]  # needs to be copied!
-        sloVec = slo[meshRST.cellMarkers()]
-    else:
-        rhoVec = rho
-        sloVec = slo
+
+    rho = np.append(rho, np.mean(rho)) # outer region
+    rhoVec = rho[meshERT.cellMarkers()]  # needs to be copied!
+    sloVec = slo[meshRST.cellMarkers()]
 
     dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
-    dataSRT = srt.simulate(meshRST.createSecondaryNodes(0), sloVec, schemeSRT)
+    dataSRT = srt.simulate(meshRST.createMeshWithSecondaryNodes(0), sloVec, schemeSRT)
     return dataERT, dataSRT
 
 
@@ -80,62 +77,19 @@ for cell in meshERT.cells():
 sensors = np.load("sensors.npy")
 shmERT = pg.DataContainerERT("erttrue.dat")
 shmSRT = createRAData(sensors)
+
 # create synthetic model starting with phi
-phi = np.array([0.4, 0.3, 0.3, 0.2, 0.3])
+phi = np.array([0.4, 0.3, 0.3, 0.3, 0.2])
 fr = 1 - phi
-fw = np.array([0.3, 0.18, 0.1, 0.02, 0.02])
-fi = np.array([0.0, 0.1, 0.18, 0.18, 0.28])
+fw = np.array([0.3, 0.18, 0.02, 0.1, 0.02])
+fi = np.array([0.0, 0.1, 0.28, 0.18, 0.18])
 fa = phi - fw - fi
+
 fa[np.isclose(fa, 0.0)] = 0.0
 
-def jac(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01, errorERT=0.03,
-        errorSRT=0.0005):
-    """ Calculate jacobian as during inversion. """
-    # Setup managers and equip with meshes
-    ert = ERTManager()
-    ert.setMesh(meshERT)
-    ert.setData(shmERT)
-    ert.fop.createRefinedForwardMesh()
-
-    rst = Refraction("tttrue.dat", verbose=True)
-    ttData = rst.dataContainer
-    rst.setMesh(meshRST)
-    rst.fop.createRefinedForwardMesh()
-
-    # Setup joint modeling and inverse operators
-    fpm = FourPhaseModel(phi=phi)
-    JM = JointMod(meshRST, ert, rst, fpm, fix_poro=False)
-
-    if len(Fx) < meshRST.cellCount():
-        data = Fx[:, meshRST.cellMarkers()].flatten()
-    else:
-        data = Fx
-
-    JM.createJacobian(data)
-
-    def block2numpy(mat):
-        pg.tic()
-        A = np.zeros((mat.rows(), mat.cols()))
-        for i in range(mat.rows()):
-            A[i] = mat.row(i)
-        pg.toc()
-        return A
-
-    J = block2numpy(JM.jac)
-    error = pg.cat(rst.relErrorVals(ttData), shmERT("err"))
-
-    return J / error.array()[:, np.newaxis]
-
-
-# Load joint inversion result
-# joint = np.load("joint_inversion.npz")
-# fa, fi, fw, fr = joint["fa"], joint["fi"], joint["fw"], joint["fr"]
 Fsyn = np.vstack((fw, fi, fa, fr))
-# jacJoint = jac(meshERT, meshRST, shmERT, shmSRT, Fsyn)
-# jacJoint.dump("jacJoint2.npy")
 
 # %% compute forward response and jacobians
-# dataERT, dataSRT = forward4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
 jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
 jacJoint = np.vstack((jacSRT, jacERT))
 print(jacERT.shape, jacSRT.shape, jacJoint.shape)
