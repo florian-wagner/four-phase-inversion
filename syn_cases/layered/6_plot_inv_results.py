@@ -136,10 +136,12 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
     for j, ax in enumerate(row):
         coverage = np.ones(mesh.cellCount()) if j is 0 else cov
         color = "k" if j is 0 and i not in (1, 3, 5) else "w"
-        ims.append(draw(ax, meshs[j], data[j], cmap=cmap, **lims,
+        ims.append(draw(ax, meshs[j], data[j], **lims,
                    logScale=logScale, coverage=coverage))
         ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
                 ha="right", color=color)
+        ims[j].set_cmap(cmap)
+
     cb = fig.colorbar(ims[0], cax=grid.cbar_axes[i])
     update_ticks(cb, log=logScale, label=label, **lims)
 
@@ -154,7 +156,7 @@ labs = [
     "assumed"
 ]
 for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, frame=False,
+    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False,
                     c="w")
 
 labs = [
@@ -165,8 +167,21 @@ labs = [
 if scenario == "Fig2":
     labs[-1] = "inverted"
 
+    # Add labels for covariance reference
+    geom = pg.load("geom.bms")
+    ax = grid.axes_all[0]
+    pg.mplviewer.drawPLC(ax, geom, fillRegion=False, lw=0.5)
+    mid = geom.xmax()/2
+
+    kwargs = dict(va="center", ha="center", fontsize=fs, fontweight="semibold")
+    ax.text(mid, -2.6, "i", color="w", **kwargs)
+    ax.text(20, -10, "ii", color="w", **kwargs)
+    ax.text(mid, -10, "iii", **kwargs)
+    ax.text(mesh.xmax() - 20, -10, "iv", color="w", **kwargs)
+    ax.text(mid, -22.5, "v", **kwargs)
+
 for ax, lab in zip(grid.axes_column[2], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, frame=False, c="w")
+    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
 from string import ascii_uppercase
 for i, ax in enumerate(grid.axes_all):
@@ -198,5 +213,6 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     color = "k" if i not in (1, 3, 5) else "w"
     add_inner_title(ax, label, loc=3, c=color, frame=False)
 
+
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
-fig.savefig("%s_two_columns.pdf" % scenario, dpi=300, bbox_inches="tight", pad_inches=0.0)
+fig.savefig("%s_two_columns.pdf" % scenario, dpi=500, bbox_inches="tight", pad_inches=0.0)
