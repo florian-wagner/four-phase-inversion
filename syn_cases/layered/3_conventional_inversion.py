@@ -26,6 +26,8 @@ geom = mt.mergePLC([plc, rect])
 meshRST = mt.createMesh(geom, quality=34, area=.5, smooth=[1,2])
 for cell in meshRST.cells():
     cell.setMarker(2)
+for boundary in meshRST.boundaries():
+    boundary.setMarker(0)
 
 pg.show(meshRST)
 meshRST.save("paraDomain.bms")

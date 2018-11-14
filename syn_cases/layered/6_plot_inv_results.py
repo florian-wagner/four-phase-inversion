@@ -174,7 +174,7 @@ if scenario == "Fig2":
     mid = geom.xmax()/2
 
     kwargs = dict(va="center", ha="center", fontsize=fs, fontweight="semibold")
-    ax.text(mid, -2.6, "i", color="w", **kwargs)
+    ax.text(mid, -2.8, "i", color="w", **kwargs)
     ax.text(20, -10, "ii", color="w", **kwargs)
     ax.text(mid, -10, "iii", **kwargs)
     ax.text(mesh.xmax() - 20, -10, "iv", color="w", **kwargs)

@@ -22,7 +22,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     ert = ERTManager()
     srt = Refraction()
     phi = 1 - Fx[-1]
-    fpm = FourPhaseModel(phi=phi, m=1.3)
+    fpm = FourPhaseModel(phi=phi)
     rho = fpm.rho(*Fx)
     slo = fpm.slowness(*Fx)
 
@@ -31,7 +31,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     sloVec = slo[meshRST.cellMarkers()]
 
     dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
-    dataSRT = srt.simulate(meshRST.createMeshWithSecondaryNodes(0), sloVec, schemeSRT)
+    dataSRT = srt.simulate(meshRST, sloVec, schemeSRT)
     return dataERT, dataSRT
 
 
@@ -60,6 +60,7 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
 # load synthetic mesh (no boundary!)
 mesh = pg.load("mesh.bms")
 meshRST = pg.load("paraDomain.bms")
+# meshRST.createSecondaryNodes(3)
 meshERT = pg.load("meshERT.bms")
 
 for cell in meshRST.cells():
@@ -78,16 +79,7 @@ sensors = np.load("sensors.npy")
 shmERT = pg.DataContainerERT("erttrue.dat")
 shmSRT = createRAData(sensors)
 
-# create synthetic model starting with phi
-phi = np.array([0.4, 0.3, 0.3, 0.3, 0.2])
-fr = 1 - phi
-fw = np.array([0.3, 0.18, 0.02, 0.1, 0.02])
-fi = np.array([0.0, 0.1, 0.28, 0.18, 0.18])
-fa = phi - fw - fi
-
-fa[np.isclose(fa, 0.0)] = 0.0
-
-Fsyn = np.vstack((fw, fi, fa, fr))
+Fsyn = np.loadtxt("syn_model.dat")
 
 # %% compute forward response and jacobians
 jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
@@ -108,7 +100,7 @@ for i in range(nreg):
         gMat[i, j*nreg+i] = 1.0
 # %%
 pg.tic("Calculating JTJ")
-jacJointConst = np.vstack((jacJoint, gMat*1000))
+jacJointConst = np.vstack((jacJoint, gMat*10000))
 JTJconst = jacJointConst.T.dot(jacJointConst)
 pg.toc()
 

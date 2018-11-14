@@ -37,8 +37,11 @@ filayers = np.array([0.0, 0.1, 0.28, 0.18, 0.18])
 falayers = philayers - fwlayers - filayers
 
 falayers[np.isclose(falayers, 0.0)] = 0.0
-
 print(falayers)
+
+# Save for covariance calculations
+Fsyn = np.vstack((fwlayers, filayers, falayers, frlayers))
+np.savetxt("syn_model.dat", Fsyn)
 
 fpm = FourPhaseModel(phi=philayers)
 
