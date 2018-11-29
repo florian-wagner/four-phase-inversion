@@ -47,7 +47,7 @@ def add_inner_title(ax, title, loc, size=None, c="k", frame=True, fw="semibold",
     else:
         size = dict(size=size, color=c, fontweight=fw)
 
-    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.2,
+    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.12,
                       frameon=False, bbox_transform=ax.transAxes, **kwargs)
 
     # if frame:

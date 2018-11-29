@@ -96,15 +96,15 @@ class JointMod(pg.ModellingBase):
 
         fig, axs = plt.subplots(3, 2)
         pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
-                logScale=False, cmap="Blues")
+                logScale=False, cMap="Blues")
         pg.show(self.mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
-                logScale=False, cmap="Purples")
+                logScale=False, cMap="Purples")
         pg.show(self.mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
-                logScale=False, cmap="Greens")
+                logScale=False, cMap="Greens")
         pg.show(self.mesh, fr, ax=axs[2, 1], label="Rock matrix content", hold=True,
-                logScale=False, cmap="Oranges")
+                logScale=False, cMap="Oranges")
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
-                cmap="Spectral_r")
+                cMap="Spectral_r")
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")
 
     def showFit(self, model):
@@ -118,7 +118,7 @@ class JointMod(pg.ModellingBase):
         fit = (self.ERT.data("rhoa") - resprhoa) / resprhoa * 100
         lim = np.max(np.abs(fit))
         pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim, label="Relative fit",
-                cmap="RdBu_r", ax=ax2)
+                cMap="RdBu_r", ax=ax2)
         fig.show()
 
     def response(self, model):

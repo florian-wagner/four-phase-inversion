@@ -27,7 +27,6 @@ geom.save("geom.bms")
 mesh = mt.createMesh(geom, area=1.0)
 
 pg.show(mesh, markers=True)
-pg.wait()
 
 # Model creation based on pore fractions
 philayers = np.array([0.4, 0.3, 0.3, 0.3, 0.2])

@@ -143,13 +143,13 @@ class FourPhaseModel():
 
         fig, axs = plt.subplots(3, 2, figsize=(16, 10))
         pg.show(mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
-                logScale=False, cmap="Blues", **kwargs)
+                logScale=False, cMap="Blues", **kwargs)
         pg.show(mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
-                logScale=False, cmap="Purples", **kwargs)
+                logScale=False, cMap="Purples", **kwargs)
         pg.show(mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
-                logScale=False, cmap="Greens", **kwargs)
+                logScale=False, cMap="Greens", **kwargs)
         pg.show(mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
-                cmap="Spectral_r", logScale=True, **kwargs)
+                cMap="Spectral_r", logScale=True, **kwargs)
         pg.show(mesh, vel, ax=axs[1, 1], label="Velocity", logScale=False,
                 hold=True, **kwargs)
         pg.show(mesh, self.phi, ax=axs[2, 1], label="Porosity", logScale=False,
