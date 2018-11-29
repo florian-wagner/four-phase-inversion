@@ -7,7 +7,8 @@ import pybert as pb
 
 class JointMod(pg.ModellingBase):
 
-    def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True, verbose=True):
+    def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True,
+                 verbose=True):
         pg.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
         self.ERT = ertfop
@@ -132,11 +133,12 @@ class JointMod(pg.ModellingBase):
         s = self.fpm.slowness(fw, fi, fa, fr)
 
         print("=" * 60)
+        print("       Min. / Max.")
         print("Water: %.2f / %.2f" % (np.min(fw), np.max(fw)))
         print("Ice:   %.2f / %.2f" % (np.min(fi), np.max(fi)))
         print("Air:   %.2f / %.2f" % (np.min(fa), np.max(fa)))
         print("Rock:  %.2f / %.2f" % (np.min(fr), np.max(fr)))
-        print("=" * 60)
+        print("-" * 60)
         print("SUM:   %.2f / %.2f" % (np.min(fa + fw + fi + fr), np.max(fa + fw + fi + fr)))
         print("=" * 60)
         print("Rho:   %.2e / %.2e" % (np.min(rho), np.max(rho)))

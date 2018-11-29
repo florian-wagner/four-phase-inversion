@@ -82,19 +82,11 @@ class FourPhaseModel():
             rho[rho <= 0] = np.min(rho[rho > 0])
         return rho
 
-    # XXX: New formulation with f_r as inversion parameter
     def rho_deriv_fw(self, fw, fi, fa, fr):
         return self.rho(fw, fi, fa, fr) * -self.n / fw
 
     def rho_deriv_fr(self, fw, fi, fa, fr):
         return self.rho(fw, fi, fa, fr) * (self.n - self.m) / (fr - 1)
-
-    # XXX: Old formulations when porosity had to be prescribed
-    # def rho_deriv_fw(self, fw, fi, fa):
-    #     return ((-self.m + self.n)/(fw + fi +fa) - self.n/fw) * self.rho(fw, fi, fa)
-    #
-    # def rho_deriv_fi_fa(self, fw, fi, fa):
-    #     return (-self.m + self.n)/(fi+fa+fw) * self.rho(fw, fi, fa)
 
     def slowness(self, fw, fi, fa, fr=None):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
@@ -108,7 +100,8 @@ class FourPhaseModel():
         return s
 
     def all(self, rho, v, mask=False):
-        """ Syntatic sugar for all fractions including a mask for unrealistic values. """
+        """Syntatic sugar for all fractions including a mask for unrealistic
+        values."""
 
         # RVectors sometimes cause segfaults
         rho = np.array(rho)
@@ -126,10 +119,6 @@ class FourPhaseModel():
         if array_mask.sum() > 1:
             print("WARNING: %d of %d fraction values are unphysical." % (int(
                 array_mask.sum()), len(array_mask.ravel())))
-        # if mask:
-        #     fa = np.ma.array(fa, mask=array_mask)
-        #     fi = np.ma.array(fi, mask=array_mask)
-        #     fw = np.ma.array(fw, mask=array_mask)
 
         if mask:
             fa = np.ma.array(fa, mask=(fa < 0) | (fa > 1 - self.fr))
@@ -180,9 +169,9 @@ def testFourPhaseModel():
                 np.log10(rho.min()),
                 np.log10(rho.max())
             ], aspect="auto", vmin=0, vmax=0.5)
-        cb = plt.colorbar(im, ax=ax, label=label)
+        plt.colorbar(im, ax=ax, label=label)
 
-    axs[1].set_ylabel("Log resistivity ($\Omega$m)")
+    axs[1].set_ylabel(r"Log resistivity ($\Omega$m)")
     axs[-1].set_xlabel("Velocity (m/s)")
 
     fig.tight_layout()
