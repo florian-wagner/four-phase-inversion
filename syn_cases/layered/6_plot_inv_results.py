@@ -46,14 +46,12 @@ veljoint, rhojoint, faj, fij, fwj, frj, maskj = joint["vel"], joint[
 def update_ticks(cb, log=False, label="", cMin=None, cMax=None):
     t = ticker.FixedLocator([cMin, cMax])
     cb.set_ticks(t)
-    cb.update_ticks()
     ticklabels = cb.ax.yaxis.get_ticklabels()
-    for i, a in enumerate(ticklabels):
-        if i == len(ticklabels) - 1:
-            a.set_text("\n" + a.get_text())
+    for i, tick in enumerate(ticklabels):
         if i == 0:
-            a.set_text(a.get_text() + "\n")
-    cb.ax.yaxis.set_ticklabels(ticklabels)
+            tick.set_verticalalignment("bottom")
+        if i == len(ticklabels) - 1:
+            tick.set_verticalalignment("top")
 
     cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(10, 0),
                    textcoords='offset pixels', horizontalalignment='center',
@@ -145,11 +143,12 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
     cb = fig.colorbar(ims[0], cax=grid.cbar_axes[i])
     update_ticks(cb, log=logScale, label=label, **lims)
 
-for ax, title in zip(grid.axes_row[0], [
+for ax, title, num in zip(grid.axes_row[0], [
         "True model", "Conventional inversion and 4PM",
         "Petrophysical joint inversion"
-]):
+], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
+    ax.set_title("(%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
 labs = [
     "inverted", "inverted", "transformed", "transformed", "transformed",
@@ -174,27 +173,22 @@ if scenario == "Fig2":
     mid = geom.xmax()/2
 
     kwargs = dict(va="center", ha="center", fontsize=fs, fontweight="semibold")
-    ax.text(mid, -2.8, "i", color="w", **kwargs)
-    ax.text(20, -10, "ii", color="w", **kwargs)
-    ax.text(mid, -10, "iii", **kwargs)
-    ax.text(mesh.xmax() - 20, -10, "iv", color="w", **kwargs)
-    ax.text(mid, -22.5, "v", **kwargs)
+    ax.text(mid, -2.9, "I", color="w", **kwargs)
+    ax.text(20, -10, "II", color="w", **kwargs)
+    ax.text(mid, -10, "III", **kwargs)
+    ax.text(mesh.xmax() - 20, -10, "IV", color="w", **kwargs)
+    ax.text(mid, -22.5, "V", **kwargs)
 
 for ax, lab in zip(grid.axes_column[2], labs):
     add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
-from string import ascii_uppercase
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
     ax.plot(sensors, np.zeros_like(sensors), marker="v", lw=0, color="k", ms=1.2)
-    ax.set_aspect(1.5)
     ax.tick_params(axis='both', which='major')
     ax.set_xticks([25, 50, 75, 100, 125])
-    if i in [9,15]:
-        color = "k"
-    else:
-        color = "w"
-    add_inner_title(ax, ascii_uppercase[i], loc=2, frame=False, c=color, fw="bold")
+    # pg.mplviewer.drawPLC(ax, geom, fillRegion=False, alpha=0.5, lw=0.5)
+    ax.set_aspect(1.5)
 
 for row in grid.axes_row[:-1]:
     for ax in row:
