@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pygimli as pg
 import pybert as pb
+import pygimli as pg
 
 
 class JointMod(pg.ModellingBase):
@@ -102,8 +102,8 @@ class JointMod(pg.ModellingBase):
                 logScale=False, cMap="Purples")
         pg.show(self.mesh, fa, ax=axs[2, 0], label="Air content", hold=True,
                 logScale=False, cMap="Greens")
-        pg.show(self.mesh, fr, ax=axs[2, 1], label="Rock matrix content", hold=True,
-                logScale=False, cMap="Oranges")
+        pg.show(self.mesh, fr, ax=axs[2, 1], label="Rock matrix content",
+                hold=True, logScale=False, cMap="Oranges")
         pg.show(self.mesh, rho, ax=axs[0, 1], label="Rho", hold=True,
                 cMap="Spectral_r")
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")
@@ -118,8 +118,8 @@ class JointMod(pg.ModellingBase):
 
         fit = (self.ERT.data("rhoa") - resprhoa) / resprhoa * 100
         lim = np.max(np.abs(fit))
-        pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim, label="Relative fit",
-                cMap="RdBu_r", ax=ax2)
+        pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim,
+                label="Relative fit", cMap="RdBu_r", ax=ax2)
         fig.show()
 
     def response(self, model):
@@ -133,16 +133,18 @@ class JointMod(pg.ModellingBase):
         s = self.fpm.slowness(fw, fi, fa, fr)
 
         print("=" * 60)
-        print("       Min. / Max.")
-        print("Water: %.2f / %.2f" % (np.min(fw), np.max(fw)))
-        print("Ice:   %.2f / %.2f" % (np.min(fi), np.max(fi)))
-        print("Air:   %.2f / %.2f" % (np.min(fa), np.max(fa)))
-        print("Rock:  %.2f / %.2f" % (np.min(fr), np.max(fr)))
+        print("       Min. | Max.")
         print("-" * 60)
-        print("SUM:   %.2f / %.2f" % (np.min(fa + fw + fi + fr), np.max(fa + fw + fi + fr)))
+        print("Water: %.2f | %.2f" % (np.min(fw), np.max(fw)))
+        print("Ice:   %.2f | %.2f" % (np.min(fi), np.max(fi)))
+        print("Air:   %.2f | %.2f" % (np.min(fa), np.max(fa)))
+        print("Rock:  %.2f | %.2f" % (np.min(fr), np.max(fr)))
+        print("-" * 60)
+        print("SUM:   %.2f | %.2f" % (np.min(fa + fw + fi + fr),
+                                      np.max(fa + fw + fi + fr)))
         print("=" * 60)
-        print("Rho:   %.2e / %.2e" % (np.min(rho), np.max(rho)))
-        print("Vel:   %d / %d" % (np.min(1 / s), np.max(1 / s)))
+        print("Rho:   %.2e | %.2e" % (np.min(rho), np.max(rho)))
+        print("Vel:   %d | %d" % (np.min(1 / s), np.max(1 / s)))
 
         t = self.RST.fop.response(s)
         rhoa = self.ERT.fop.response(rho)

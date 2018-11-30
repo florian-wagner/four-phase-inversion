@@ -49,4 +49,4 @@ class JointInv(LSQRInversion):
             phiVec = pg.cat(ones, ones - self.forwardOperator().fpm.phi)
         else:
             phiVec = ones
-        self.setParameterConstraints(self.forwardOperator()._G, phiVec, 100000)
+        self.setParameterConstraints(self.forwardOperator()._G, phiVec, 10000)
