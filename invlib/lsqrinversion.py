@@ -30,8 +30,8 @@ class LSQRInversion(pg.RInversion):
         for i in range(self.maxIter()):
             boxprint("Iteration #%d" % i, width=80, sym="+")
             self.oneStep()
-            boxprint(("It:", i, "Chi2: %.2f" % self.chi2(),
-                      "RMS: %.2f %%" % self.relrms()))
+            boxprint("Iteration: %d | Chi^2: %.2f | RMS: %.2f%%" % (i,
+                     self.chi2(), self.relrms()))
             if self.chi2() <= 1.0:
                 print("Done. Reached target data misfit of chi^2 <= 1.")
                 break
