@@ -60,7 +60,7 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
 # load synthetic mesh (no boundary!)
 mesh = pg.load("mesh.bms")
 meshRST = pg.load("paraDomain.bms")
-# meshRST.createSecondaryNodes(3)
+meshRST.createSecondaryNodes(3)
 meshERT = pg.load("meshERT.bms")
 
 for cell in meshRST.cells():
@@ -85,7 +85,7 @@ Fsyn = np.loadtxt("syn_model.dat")
 jacERT, jacSRT = jacobian4PM(meshERT, meshRST, shmERT, shmSRT, Fsyn)
 jacJoint = np.vstack((jacSRT, jacERT))
 print(jacERT.shape, jacSRT.shape, jacJoint.shape)
-jacJoint.dump("jacJoint.npy")
+jacJoint.dump("jacJoint.npz")
 pg.tic("Calculating JTJ")
 JTJ = jacJoint.T.dot(jacJoint)
 pg.toc()
