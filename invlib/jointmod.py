@@ -8,7 +8,7 @@ import pygimli as pg
 class JointMod(pg.ModellingBase):
 
     def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True,
-                 verbose=True):
+                 zWeight=1, verbose=True):
         pg.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
         self.ERT = ertfop
@@ -17,6 +17,7 @@ class JointMod(pg.ModellingBase):
         self.fpm = petromodel
         self.cellCount = self.mesh.cellCount()
         self.fix_poro = fix_poro
+        self.zWeight = zWeight
         self.createConstraints()
 
     def fractions(self, model):
@@ -61,7 +62,14 @@ class JointMod(pg.ModellingBase):
     def createConstraints(self):
         # First order smoothness matrix
         self._Ctmp = pg.RSparseMapMatrix()
-        self.RST.fop.regionManager().fillConstraints(self._Ctmp)
+        rm = self.RST.fop.regionManager()
+        rm.fillConstraints(self._Ctmp)
+
+        # Set zWeight
+        rm.setZWeight(self.zWeight)
+        self.cWeight = pg.RVector()
+        rm.fillConstraintsWeight(self.cWeight)
+        self._CW = pg.LMultRMatrix(self._Ctmp, self.cWeight)
 
         # # Geostatistical constraints
         # CM = pg.utils.geostatistics.covarianceMatrix(self.mesh, I=[40, 3])
@@ -69,7 +77,7 @@ class JointMod(pg.ModellingBase):
 
         # Putting together in block matrix
         self._C = pg.RBlockMatrix()
-        cid = self._C.addMatrix(self._Ctmp)
+        cid = self._C.addMatrix(self._CW)
         self._C.addMatrixEntry(cid, 0, 0)
         self._C.addMatrixEntry(cid, self._Ctmp.rows(), self.cellCount)
         self._C.addMatrixEntry(cid, self._Ctmp.rows() * 2, self.cellCount * 2)
@@ -132,19 +140,19 @@ class JointMod(pg.ModellingBase):
         rho = self.fpm.rho(fw, fi, fa, fr)
         s = self.fpm.slowness(fw, fi, fa, fr)
 
-        print("=" * 60)
-        print("       Min. | Max.")
-        print("-" * 60)
-        print("Water: %.2f | %.2f" % (np.min(fw), np.max(fw)))
-        print("Ice:   %.2f | %.2f" % (np.min(fi), np.max(fi)))
-        print("Air:   %.2f | %.2f" % (np.min(fa), np.max(fa)))
-        print("Rock:  %.2f | %.2f" % (np.min(fr), np.max(fr)))
-        print("-" * 60)
-        print("SUM:   %.2f | %.2f" % (np.min(fa + fw + fi + fr),
+        print("=" * 30)
+        print("        Min. | Max.")
+        print("-" * 30)
+        print(" Water: %.2f | %.2f" % (np.min(fw), np.max(fw)))
+        print(" Ice:   %.2f | %.2f" % (np.min(fi), np.max(fi)))
+        print(" Air:   %.2f | %.2f" % (np.min(fa), np.max(fa)))
+        print(" Rock:  %.2f | %.2f" % (np.min(fr), np.max(fr)))
+        print("-" * 30)
+        print(" SUM:   %.2f | %.2f" % (np.min(fa + fw + fi + fr),
                                       np.max(fa + fw + fi + fr)))
-        print("=" * 60)
-        print("Rho:   %.2e | %.2e" % (np.min(rho), np.max(rho)))
-        print("Vel:   %d | %d" % (np.min(1 / s), np.max(1 / s)))
+        print("=" * 30)
+        print(" Rho:   %.2e | %.2e" % (np.min(rho), np.max(rho)))
+        print(" Vel:   %d | %d" % (np.min(1 / s), np.max(1 / s)))
 
         t = self.RST.fop.response(s)
         rhoa = self.ERT.fop.response(rho)
