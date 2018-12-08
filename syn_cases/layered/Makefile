@@ -21,6 +21,7 @@ case2:
 show:
 	python ./6_plot_inv_results.py
 	python ./6_plot_inv_results.py "Fig2"
+	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf" 
 
 copy:
 	cp -f "Fig1_two_columns.pdf" ../../manuscripts/1_theory_and_implementation

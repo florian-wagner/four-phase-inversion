@@ -11,6 +11,7 @@ from invlib import FourPhaseModel, JointMod, JointInv
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
+lam = 20
 # Settings
 if len(sys.argv) > 1:
     scenario = "Fig2"
@@ -18,13 +19,12 @@ if len(sys.argv) > 1:
     fix_poro = False
     poro_min = 0.2
     poro_max = 0.4
-    lam = 10
+    lam /= 10
 else:
     scenario = "Fig1"
     fix_poro = True
     poro_min = 0
     poro_max = 1
-    lam = 0.1
 
 ############
 # Settings
@@ -69,7 +69,7 @@ ttData = rst.dataContainer
 rst.setMesh(meshRST, secNodes=3)
 
 # Setup joint modeling and inverse operators
-JM = JointMod(meshRST, ert, rst, fpm, fix_poro=fix_poro)
+JM = JointMod(meshRST, ert, rst, fpm, fix_poro=fix_poro, zWeight=0.25)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
 error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))

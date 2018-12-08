@@ -74,9 +74,15 @@ assert np.allclose(fa + fi + fw + fr, 1)
 
 np.savez("true_model.npz", rho=rhotrue, vel=veltrue, fa=fa, fi=fi, fw=fw, fr=fr)
 
-sensors = np.arange(10, 141, 3.5)
+sensors = np.arange(10, 141, 2, dtype="float")
+print(sensors)
+print("Sensors", len(sensors))
+# sensors = np.linspace(10, 120, 48)
+# ax, _ = pg.show(mesh)
+# ax.plot(sensors, np.zeros_like(sensors), "ro")
 sensors.dump("sensors.npy")
 
 mesh.save("mesh.bms")
 np.savetxt("rhotrue.dat", rhotrue)
 np.savetxt("veltrue.dat", veltrue)
+pg.wait()

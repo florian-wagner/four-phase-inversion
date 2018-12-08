@@ -52,7 +52,7 @@ vel = mt.fillEmptyToCellArray(meshRSTFWD, vel, slope=False)
 ttScheme = createRAData(sensors)
 rst = Refraction(verbose=True)
 
-error = 0.0005 # seconds
+error = 0.0005 # = 0.5 ms
 meshRSTFWD.createSecondaryNodes(3)
 ttData = rst.simulate(meshRSTFWD, 1. / vel, ttScheme,
                       noisify=True, noiseLevel=0.0, noiseAbs=error)
