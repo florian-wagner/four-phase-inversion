@@ -20,6 +20,18 @@ rhotrue = np.loadtxt("rhotrue.dat")
 veltrue = np.loadtxt("veltrue.dat")
 
 pg.boxprint("Simulate apparent resistivities")
+
+ertScheme = pb.DataContainerERT()
+for sensor in sensors:
+    ertScheme.createSensor([sensor, 0.0])
+for A in sensors:
+    for skip in skips:
+        B = A + 1 + skip
+        for 
+        M = B + 1
+
+# %%
+
 ertScheme = pb.createData(sensors, "dd")
 ert = ERTManager()
 

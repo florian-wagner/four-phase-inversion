@@ -74,7 +74,7 @@ assert np.allclose(fa + fi + fw + fr, 1)
 
 np.savez("true_model.npz", rho=rhotrue, vel=veltrue, fa=fa, fi=fi, fw=fw, fr=fr)
 
-sensors = np.arange(10, 141, 2, dtype="float")
+sensors = np.arange(10, 141, 2.5, dtype="float")
 print(sensors)
 print("Sensors", len(sensors))
 # sensors = np.linspace(10, 120, 48)
