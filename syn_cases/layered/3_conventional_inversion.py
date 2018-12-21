@@ -49,11 +49,12 @@ ert = ERTManager()
 ert.setMesh(meshERT)
 ert.fop.createRefinedForwardMesh()
 
-resinv = ert.invert(ertData, lam=10, zWeight=zWeight, maxIter=5)
+resinv = ert.invert(ertData, lam=100, zWeight=zWeight, maxIter=maxIter)
 print("ERT chi: %.2f" % ert.inv.chi2())
 print("ERT rms: %.2f" % ert.inv.relrms())
 np.savetxt("res_conventional.dat", resinv)
 
+1/0
 # Seismic inversion
 rst = Refraction("tttrue.dat", verbose=True)
 ttData = rst.dataContainer

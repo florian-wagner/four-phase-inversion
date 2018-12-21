@@ -7,6 +7,9 @@ from scipy.spatial import ConvexHull
 
 import pygimli as pg
 
+def logFormat(val):
+    base, exponent = ("%.2E" % val).split("E")
+    return r"%s × 10$^{%d}$" % (base, int(exponent))
 
 def NN_interpolate(inmesh, indata, outmesh, nan=99.9):
     """ Nearest neighbor interpolation. """
@@ -40,14 +43,14 @@ def rst_cov(mesh, cov):
     return np.array(covs)
 
 
-def add_inner_title(ax, title, loc, size=None, c="k", frame=True, fw="semibold", **kwargs):
+def add_inner_title(ax, title, loc, size=None, c="k", frame=True, fw="semibold", borderpad=0.2, **kwargs):
     """ Add inner title to plot. """
     if size is None:
         size = dict(size=plt.rcParams['legend.fontsize'], color=c, fontweight=fw)
     else:
         size = dict(size=size, color=c, fontweight=fw)
 
-    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=0.2,
+    at = AnchoredText(title, loc=loc, prop=size, pad=0., borderpad=borderpad,
                       frameon=False, bbox_transform=ax.transAxes, **kwargs)
 
     # if frame:

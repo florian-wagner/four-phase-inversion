@@ -44,7 +44,7 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
     jacSRT = np.zeros((dataSRT.size(), npar))
     for i in range(npar):
         print("\n")
-        pg.boxprint(f"{i+1} / {npar}")
+        pg.boxprint("%d / %d" % (i + 1, npar))
         print(Fx.flat[i], end=" ")
         Fx1 = np.copy(Fx)
         Fx1.flat[i] += df
