@@ -62,6 +62,7 @@ def update_ticks(cb, log=False, label="", cMin=None, cMax=None):
 def lim(data):
     """Return appropriate colorbar limits."""
     data = np.array(data)
+    print("dMin", data.min(), "dMax", data.max())
     if data.min() < 0:
         dmin = 0.0
     else:
@@ -83,6 +84,7 @@ def draw(ax, mesh, model, **kwargs):
 def minmax(data):
     """Return minimum and maximum of data as a 2-line string."""
     tmp = np.array(data)
+    print("max", tmp.max())
     if np.isclose(tmp.min(), 0, atol=9e-3):
         min = 0
     else:
@@ -127,7 +129,7 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
         lims = {"cMin": 1500, "cMax": 5000}
     elif i == 1:
         lims = {"cMin": 1e3, "cMax": 1e5}
-        borderpad = 0.1
+        borderpad = 0.08
     else:
         lims = lim(list(data[0]) + list(data[1][cov > 0]) + list(data[2][cov > 0]))
     print(lims)
@@ -140,7 +142,7 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
                    logScale=logScale, coverage=coverage))
         # ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
         #         ha="right", color=color)
-        add_inner_title(ax, minmax(data[j]), loc=4, size=fs, fw="regular", frame=False,
+        add_inner_title(ax, minmax(data[j][coverage > 0]), loc=4, size=fs, fw="regular", frame=False,
                         c=color, borderpad=borderpad)
         ims[j].set_cmap(cmap)
 
@@ -209,7 +211,7 @@ for i, ax in enumerate(grid.axes_all):
     ax.tick_params(axis='both', which='major')
     ax.set_xticks([25, 50, 75, 100, 125])
     ax.set_ylim(-25,0)
-    ax.set_aspect(1.8)
+    ax.set_aspect(1.85)
 
 for row in grid.axes_row[:-1]:
     for ax in row:

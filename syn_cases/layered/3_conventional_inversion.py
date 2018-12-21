@@ -49,12 +49,11 @@ ert = ERTManager()
 ert.setMesh(meshERT)
 ert.fop.createRefinedForwardMesh()
 
-resinv = ert.invert(ertData, lam=100, zWeight=zWeight, maxIter=maxIter)
+resinv = ert.invert(ertData, lam=30, zWeight=zWeight, maxIter=maxIter)
 print("ERT chi: %.2f" % ert.inv.chi2())
 print("ERT rms: %.2f" % ert.inv.relrms())
 np.savetxt("res_conventional.dat", resinv)
 
-1/0
 # Seismic inversion
 rst = Refraction("tttrue.dat", verbose=True)
 ttData = rst.dataContainer
@@ -65,7 +64,7 @@ startmodel = createGradientModel2D(ttData, meshRST, np.min(veltrue),
                                    np.max(veltrue))
 np.savetxt("rst_startmodel.dat", 1 / startmodel)
 vest = rst.invert(ttData, zWeight=zWeight, startModel=startmodel,
-                  maxIter=maxIter, lam=180)
+                  maxIter=maxIter, lam=220)
 print("RST chi: %.2f" % rst.inv.chi2())
 print("RST rms: %.2f" % rst.inv.relrms())
 
