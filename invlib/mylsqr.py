@@ -7,7 +7,7 @@ import pygimli as pg
 def lsqr(A, b, damp=0.0, x=None, maxiter=200, show=False):
     """Solve A x = b in a Least-Squares sense using LSQR algorithm.
 
-    After Page and Saunders (1982)"""
+    After Paige and Saunders (1982)"""
     if x is None:  # no starting vector
         x = pg.RVector(A.cols())
         u = b

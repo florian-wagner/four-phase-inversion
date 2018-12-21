@@ -29,7 +29,7 @@ rect = mt.createRectangle([mesh.xmin(), mesh.ymin()],
                           [mesh.xmax(), mesh.ymax()])
 geom = mt.mergePLC([plc, rect])
 
-meshRST = mt.createMesh(geom, quality=34, area=1, smooth=[1, 2])
+meshRST = mt.createMesh(geom, quality=34, area=0.5, smooth=[1, 2])
 for cell in meshRST.cells():
     cell.setMarker(2)
 for boundary in meshRST.boundaries():
@@ -49,12 +49,11 @@ ert = ERTManager()
 ert.setMesh(meshERT)
 ert.fop.createRefinedForwardMesh()
 
-resinv = ert.invert(ertData, lam=20, zWeight=zWeight, maxIter=5)
+resinv = ert.invert(ertData, lam=10, zWeight=zWeight, maxIter=5)
 print("ERT chi: %.2f" % ert.inv.chi2())
 print("ERT rms: %.2f" % ert.inv.relrms())
 np.savetxt("res_conventional.dat", resinv)
 
-1/0
 # Seismic inversion
 rst = Refraction("tttrue.dat", verbose=True)
 ttData = rst.dataContainer

@@ -17,9 +17,8 @@ if len(sys.argv) > 1:
     scenario = "Fig2"
     poro = 0.3 # startmodel if poro is estimated
     fix_poro = False
-    poro_min = 0.2
-    poro_max = 0.4
-    lam /= 10
+    poro_min = 0.15
+    poro_max = 0.45
 else:
     scenario = "Fig1"
     fix_poro = True

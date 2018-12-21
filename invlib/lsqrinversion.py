@@ -141,7 +141,6 @@ class LSQRInversion(pg.RInversion):
             responseI = tD.inv(t1 * tau + t0 * (1.0 - tau))
             phi[i] = self.getPhi(modelI, responseI)
 
-        pg.plt.plot(phi)
         return taus[np.argmin(phi)], responseLS
 
     def lineSearchQuad(self, dM, responseLS):

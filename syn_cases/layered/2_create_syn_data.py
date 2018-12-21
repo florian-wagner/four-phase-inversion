@@ -21,18 +21,12 @@ veltrue = np.loadtxt("veltrue.dat")
 
 pg.boxprint("Simulate apparent resistivities")
 
-ertScheme = pb.DataContainerERT()
-for sensor in sensors:
-    ertScheme.createSensor([sensor, 0.0])
-for A in sensors:
-    for skip in skips:
-        B = A + 1 + skip
-        for 
-        M = B + 1
+# Create more realistic data set
+ertScheme = pb.createData(sensors, "dd", spacings=[1,2,4])
+k = pb.geometricFactors(ertScheme)
+ertScheme.markInvalid(pg.abs(k) > 5000)
+ertScheme.removeInvalid()
 
-# %%
-
-ertScheme = pb.createData(sensors, "dd")
 ert = ERTManager()
 
 # Create suitable mesh for ert forward calculation
