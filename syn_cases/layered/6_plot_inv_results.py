@@ -1,21 +1,22 @@
 #############################################
 # to find "invlib" in the main folder
-import sys, os
+import os
+import sys
 sys.path.insert(0, os.path.abspath("../.."))
 #############################################
 
-from invlib import add_inner_title, rst_cov, set_style, logFormat
-fs = 5.5
-set_style(fs, style="seaborn-dark")
-
 import matplotlib.pyplot as plt
 import numpy as np
-
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 import pygimli as pg
+from invlib import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
+
+fs = 5.5
+set_style(fs, style="seaborn-dark")
+
 
 if len(sys.argv) > 1:
     scenario = "Fig2"
@@ -42,6 +43,7 @@ velest, rhoest, fae, fie, fwe, mask = est["vel"], est["rho"], est["fa"], est[
 veljoint, rhojoint, faj, fij, fwj, frj, maskj = joint["vel"], joint[
     "rho"], joint["fa"], joint["fi"], joint["fw"], joint["fr"], joint["mask"]
 
+
 # Some helper functions
 def update_ticks(cb, log=False, label="", cMin=None, cMax=None):
     t = ticker.FixedLocator([cMin, cMax])
@@ -53,10 +55,10 @@ def update_ticks(cb, log=False, label="", cMin=None, cMax=None):
         if i == len(ticklabels) - 1:
             tick.set_verticalalignment("top")
 
-    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction', xytext=(10, 0),
-                   textcoords='offset pixels', horizontalalignment='center',
-                   verticalalignment='center', rotation=90, fontsize=fs,
-                   fontweight="regular")
+    cb.ax.annotate(label, xy=(1, 0.5), xycoords='axes fraction',
+                   xytext=(10, 0), textcoords='offset pixels',
+                   horizontalalignment='center', verticalalignment='center',
+                   rotation=90, fontsize=fs, fontweight="regular")
 
 
 def lim(data):
@@ -71,6 +73,7 @@ def lim(data):
     kwargs = {"cMin": dmin, "cMax": dmax}
     return kwargs
 
+
 def draw(ax, mesh, model, **kwargs):
     model = np.array(model)
     if not np.isclose(model.min(), 0.0, atol=9e-3) and (model < 0).any():
@@ -80,6 +83,7 @@ def draw(ax, mesh, model, **kwargs):
         model = np.ma.masked_where(kwargs["coverage"] == 0, model)
     gci = drawModel(ax, mesh, model, rasterized=True, nLevs=2, **kwargs)
     return gci
+
 
 def minmax(data):
     """Return minimum and maximum of data as a 2-line string."""
@@ -95,6 +99,7 @@ def minmax(data):
         return "min: %d" % min + " | max: " + logFormat(tmp.max())
     else:
         return "min: %.2f | max: %.2f" % (min, tmp.max())
+
 
 # %%
 fig = plt.figure(figsize=(7, 4.5))
@@ -115,14 +120,11 @@ long_labels = [
 ]
 meshs = [mesh, meshj, meshj]
 cmaps = ["viridis", "Spectral_r", "Blues", "Purples", "Greens", "Oranges"]
-datas = [(veltrue, velest, veljoint),
-         (rhotrue, rhoest, rhojoint),
-         (fw, fwe, fwj),
-         (fi, fie, fij),
-         (fa, fae, faj),
-         (fr, fre, frj)]
+datas = [(veltrue, velest, veljoint), (rhotrue, rhoest, rhojoint),
+         (fw, fwe, fwj), (fi, fie, fij), (fa, fae, faj), (fr, fre, frj)]
 
-for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, cmaps)):
+for i, (row, data, label, cmap) in enumerate(
+        zip(grid.axes_row, datas, labels, cmaps)):
     print("Plotting", label)
     borderpad = 0.2
     if i == 0:
@@ -131,19 +133,21 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
         lims = {"cMin": 1e3, "cMax": 1e5}
         borderpad = 0.08
     else:
-        lims = lim(list(data[0]) + list(data[1][cov > 0]) + list(data[2][cov > 0]))
+        lims = lim(
+            list(data[0]) + list(data[1][cov > 0]) + list(data[2][cov > 0]))
     print(lims)
     logScale = True if "rho" in label else False
     ims = []
     for j, ax in enumerate(row):
         coverage = np.ones(mesh.cellCount()) if j is 0 else cov
         color = "k" if j is 0 and i not in (1, 3, 5) else "w"
-        ims.append(draw(ax, meshs[j], data[j], **lims,
-                   logScale=logScale, coverage=coverage))
+        ims.append(draw(ax, meshs[j], data[j], **lims, logScale=logScale,
+                   coverage=coverage))
         # ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
         #         ha="right", color=color)
-        add_inner_title(ax, minmax(data[j][coverage > 0]), loc=4, size=fs, fw="regular", frame=False,
-                        c=color, borderpad=borderpad)
+        add_inner_title(ax, minmax(data[j][coverage > 0]), loc=4, size=fs,
+                        fw="regular", frame=False, c=color,
+                        borderpad=borderpad)
         ims[j].set_cmap(cmap)
 
     cb = fig.colorbar(ims[0], cax=grid.cbar_axes[i])
@@ -151,18 +155,16 @@ for i, (row, data, label, cmap) in enumerate(zip(grid.axes_row, datas, labels, c
 
 for ax, title, num in zip(grid.axes_row[0], [
         "True model", "Conventional inversion and 4PM",
-        "Petrophysical joint inversion"
-], "abc"):
+        "Petrophysical joint inversion"], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
-    ax.set_title("(%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
+    ax.set_title("%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
 labs = [
     "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
     "Assumed"
 ]
 for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False,
-                    c="w")
+    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
 labs = [
     "Transformed", "Transformed", "Inverted", "Inverted", "Inverted",
@@ -175,7 +177,7 @@ if scenario == "Fig2":
 
     # Add labels for covariance reference
     ax = grid.axes_all[0]
-    mid = geom.xmax()/2
+    mid = geom.xmax() / 2
 
     kwargs = dict(va="center", ha="center", fontsize=fs, fontweight="semibold")
     ax.text(mid, -2.9, "I", color="w", **kwargs)
@@ -199,18 +201,18 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
             style = "solid"
             if np.isclose(bound.size(), 14.14, atol=0.5):
                 style = "dotted"
-            pg.mplviewer.drawSelectedMeshBoundaries(ax, [bound], linewidth=0.5,
-                                                    linestyles=style, color="k")
+            pg.mplviewer.drawSelectedMeshBoundaries(
+                ax, [bound], linewidth=0.5, linestyles=style, color="k")
     else:
         pg.mplviewer.drawPLC(ax, geom, fillRegion=False, lw=0.5)
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
-    ax.plot(sensors, np.zeros_like(sensors) + 0.1, marker="o", lw=0, color="k",
-            ms=0.6)
+    ax.plot(sensors,
+            np.zeros_like(sensors) + 0.1, marker="o", lw=0, color="k", ms=0.6)
     ax.tick_params(axis='both', which='major')
     ax.set_xticks([25, 50, 75, 100, 125])
-    ax.set_ylim(-25,0)
+    ax.set_ylim(-25, 0)
     ax.set_aspect(1.85)
 
 for row in grid.axes_row[:-1]:
@@ -220,6 +222,6 @@ for row in grid.axes_row[:-1]:
 for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)")
 
-
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
-fig.savefig("%s_two_columns.pdf" % scenario, dpi=500, bbox_inches="tight", pad_inches=0.0)
+fig.savefig("%s_two_columns.pdf" % scenario, dpi=500, bbox_inches="tight",
+            pad_inches=0.0)
