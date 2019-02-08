@@ -119,10 +119,9 @@ long_labels = [
     "Rock content"
 ]
 meshs = [mesh, meshj, meshj]
-cmaps = ["viridis", "Spectral_r", "Blues", "Purples", "Greens", "Oranges"]
-datas = [(veltrue, velest, veljoint), (rhotrue, rhoest, rhojoint),
-         (fw, fwe, fwj), (fi, fie, fij), (fa, fae, faj), (fr, fre, frj)]
-
+cmaps = ["Blues", "Purples", "Greens", "Oranges", "viridis", "Spectral_r"]
+datas = [(fw, fwe, fwj), (fi, fie, fij), (fa, fae, faj), (fr, fre, frj),
+        (veltrue, velest, veljoint), (rhotrue, rhoest, rhojoint)]
 for i, (row, data, label, cmap) in enumerate(
         zip(grid.axes_row, datas, labels, cmaps)):
     print("Plotting", label)

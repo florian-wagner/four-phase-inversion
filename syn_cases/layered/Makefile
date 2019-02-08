@@ -28,4 +28,4 @@ copy:
 	cp -f "Fig2_two_columns.pdf" ../../manuscripts/1_theory_and_implementation
 
 
-all: clean calc inv case1 case2 show copy
+all: clean calc inv case1 case2 show

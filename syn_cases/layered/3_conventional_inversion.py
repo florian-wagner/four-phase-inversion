@@ -29,7 +29,7 @@ rect = mt.createRectangle([mesh.xmin(), mesh.ymin()],
                           [mesh.xmax(), mesh.ymax()])
 geom = mt.mergePLC([plc, rect])
 
-meshRST = mt.createMesh(geom, quality=34, area=0.5, smooth=[1, 2])
+meshRST = mt.createMesh(geom, quality=34, area=1.5, smooth=[1, 2])
 for cell in meshRST.cells():
     cell.setMarker(2)
 for boundary in meshRST.boundaries():
@@ -47,7 +47,7 @@ meshERT.save("meshERT.bms")
 # ERT inversion
 ert = ERTManager()
 ert.setMesh(meshERT)
-ert.fop.createRefinedForwardMesh()
+# ert.fop.createRefinedForwardMesh()
 
 resinv = ert.invert(ertData, lam=30, zWeight=zWeight, maxIter=maxIter)
 print("ERT chi: %.2f" % ert.inv.chi2())
