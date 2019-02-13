@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from math import log
 import pygimli as pg
 
 
@@ -49,17 +48,17 @@ class FourPhaseModelSomerton():
         self.rhor = rhor
 
     def ice(self, rho, v):
-        fi = (1. - self.fr - log(rho)/log(self.rhow) + fr*log(self.rhor)/log(self.rhow) + self.va * (log(self.rhoa)/log(self.rhow) - 1)) * ( ( 1/v - self.fr/self.vr - log(rho)/log(self.rhow)/self.vw + fr*log(self.rhor)/log(self.rhow)/self.vw ) / (1 - self.va * log(self.rhoa)/log(self.rhow)/self.vw)  ) / (1 - log(self.rhoi)/log(self.rhow) - self.va * (log(self.rhoa)/log(self.rhow) - 1) * ( (log(self.rhoi)/log(self.rhow)/self.vw - 1/self.vi) / (1 - self.va * log(self.rhoa)/log(self.rhow)/self.vw ) ) )
+        fi = (1. - self.fr - np.log(rho)/np.log(self.rhow) + self.fr*np.log(self.rhor)/np.log(self.rhow) + self.va * (np.log(self.rhoa)/np.log(self.rhow) - 1)) * ( ( 1/v - self.fr/self.vr - np.log(rho)/np.log(self.rhow)/self.vw + self.fr*np.log(self.rhor)/np.log(self.rhow)/self.vw ) / (1 - self.va * np.log(self.rhoa)/np.log(self.rhow)/self.vw)  ) / (1 - np.log(self.rhoi)/np.log(self.rhow) - self.va * (np.log(self.rhoa)/np.log(self.rhow) - 1) * ( (np.log(self.rhoi)/np.log(self.rhow)/self.vw - 1/self.vi) / (1 - self.va * np.log(self.rhoa)/np.log(self.rhow)/self.vw ) ) )
         fi[np.isclose(fi, 0)] = 0
         return fi
 
     def air(self, rho, v, fi):
-        fa = 1. /(self.va*log(self.rhoa)/self.vw/log(self.rhow)) * self.va * ( 1/v - self.fr/self.vr - fi/self.vi - ( log(rho) - fi*log(self.rhoi) - fr*log(self.rhor) )/self.vw/log(self.rhow) )
+        fa = 1. /(self.va*np.log(self.rhoa)/self.vw/np.log(self.rhow)) * self.va * ( 1/v - self.fr/self.vr - fi/self.vi - ( np.log(rho) - fi*np.log(self.rhoi) - self.fr*np.log(self.rhor) )/self.vw/np.log(self.rhow) )
         fa[np.isclose(fa, 0)] = 0
         return fa
 
     def water(self, rho, fi, fa):
-        fw = log(rho)/log(self.rhow) - self.fi*log(self.rhoi)/log(self.rhow) - fr*log(self.rhor)/log(self.rhow) - fa*log(self.rhoa)/log(self.rhow) 
+        fw = np.log(rho)/np.log(self.rhow) - fi*np.log(self.rhoi)/np.log(self.rhow) - self.fr*np.log(self.rhor)/np.log(self.rhow) - fa*np.log(self.rhoa)/np.log(self.rhow) 
         fw[np.isclose(fw, 0)] = 0
         return fw
 
@@ -79,16 +78,16 @@ class FourPhaseModelSomerton():
         return rho
 
     def rho_deriv_fw(self, fw, fi, fa, fr):
-        return self.rho(fw, fi, fa, fr) * log(self.rhow)
+        return self.rho(fw, fi, fa, fr) * np.log(self.rhow)
 
     def rho_deriv_fr(self, fw, fi, fa, fr):
-        return self.rho(fw, fi, fa, fr) * log(self.rhor)
+        return self.rho(fw, fi, fa, fr) * np.log(self.rhor)
 
     def rho_deriv_fi(self, fw, fi, fa, fr):
-        return self.rho(fw, fi, fa, fr) * log(self.rhoi)
+        return self.rho(fw, fi, fa, fr) * np.log(self.rhoi)
 
     def rho_deriv_fa(self, fw, fi, fa, fr):
-        return self.rho(fw, fi, fa, fr) * log(self.rhoa)
+        return self.rho(fw, fi, fa, fr) * np.log(self.rhoa)
 
     def slowness(self, fw, fi, fa, fr=None):
         """Return slowness based on fraction of water `fw` and ice `fi`."""
@@ -111,7 +110,7 @@ class FourPhaseModelSomerton():
 
         fi = self.ice(rho, v)
         fa = self.air(rho, v, fi)
-        fw = self.water(rho)
+        fw = self.water(rho, fi, fa)
 
         # Check that fractions are between 0 and 1
         array_mask = np.array(((fa < 0) | (fa > 1 - self.fr))
