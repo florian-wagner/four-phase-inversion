@@ -4,10 +4,10 @@ import numpy as np
 import pygimli as pg
 
 
-class FourPhaseModel():
+class FourPhaseModelBrandt():
 
-    def __init__(self, vw=1500., va=330., vi=3500., vr=5500, a=1., n=2., m=1.3,
-                 phi=0.4, rhow=150.):
+    def __init__(self, vw=1500., va=330., vi=3500., vr=5500, a=1., n=2.1, m=1.8,
+                 phi=0.4, rhow=150., epsilon=0.05):
         """Four phase model (4PM) after Hauck et al. (2011). Estimates fraction
         of ice, air and water from electrical bulk resistivity and seismic
         velocity.
@@ -32,6 +32,8 @@ class FourPhaseModel():
             Porosity `phi` (the default is 0.4).
         rhow : float or array type
             Water resistivity `rhow` (the default is 150).
+	epsilon : float or array type
+		rock resistivity factor `epsilon` in 1/Ohmm  (the default is 0).
         """
 
         # Velocities of water, air, ice and rock (m/s)
@@ -47,24 +49,21 @@ class FourPhaseModel():
         self.phi = phi
         self.fr = 1 - self.phi  # fraction of rock
         self.rhow = rhow
+        self.epsilon = epsilon
 
     def water(self, rho):
         fw = ((self.a * self.rhow * self.phi**self.n) /
-              (rho * self.phi**self.m))**(1 / self.n)
+              ((1 + self.epsilon * self.rhow) * rho * self.phi**self.m))**(1 / self.n)
         fw[np.isclose(fw, 0)] = 0
         return fw
 
     def ice(self, rho, v):
-        fi = (self.vi * self.va / (self.va - self.vi) * (
-            1. / v - self.fr / self.vr - self.phi / self.va - self.water(rho) *
-            (1. / self.vw - 1. / self.va)))
+        fi = (self.vi * self.va / (self.va - self.vi) * (1. / v - self.fr / self.vr - self.phi / self.va + ((self.a * self.rhow * self.phi**self.n) / ((1 + self.epsilon * self.rhow) * rho * self.phi**self.m))**(1 / self.n) * (1. / self.va - 1. / self.vw)))
         fi[np.isclose(fi, 0)] = 0
         return fi
 
     def air(self, rho, v):
-        fa = ((self.vi * self.va / (self.vi - self.va) * (
-            1. / v - self.fr / self.vr - self.phi / self.vi - self.water(rho) *
-            (1. / self.vw - 1. / self.vi))))
+        fa = ((self.vi * self.va / (self.vi - self.va) * (1. / v - self.fr / self.vr - self.phi / self.vi - ((self.a * self.rhow * self.phi**self.n) / ((1 + self.epsilon * self.rhow) * rho * self.phi**self.m))**(1 / self.n) * (1. / self.vw - 1. / self.vi))))
         fa[np.isclose(fa, 0)] = 0
         return fa
 
@@ -75,7 +74,7 @@ class FourPhaseModel():
         else:
             phi = 1 - fr
 
-        rho = self.a * self.rhow * phi**(-self.m) * (fw / phi)**(-self.n)
+        rho = self.a * self.rhow / (1 + self.epsilon * self.rhow)  * phi**(-self.m) * (fw / phi)**(-self.n)
         if (rho <= 0).any():
             pg.warn(
                 "Found negative resistivity, setting to nearest above zero.")
@@ -152,12 +151,12 @@ class FourPhaseModel():
         return fig, axs
 
 
-def testFourPhaseModel():
+def testFourPhaseModelBrandt():
     # Parameters from Hauck et al. (2011)
-    fpm = FourPhaseModel(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2.,
-                         m=2., a=1., rhow=200.)
+    fpm = FourPhaseModelBrandt(vw=1500, vi=3500, va=300, vr=6000, phi=0.5, n=2.,
+                         m=2., a=1., rhow=200., epsilon=0.1)
 
-    assert fpm.water(10.0) == 10.0
+    #assert fpm.water(10.0) == 10.0
     v = np.linspace(500, 6000, 1000)
     rho = np.logspace(2, 7, 1000)
     x, y = np.meshgrid(v, rho)
@@ -193,5 +192,5 @@ if __name__ == '__main__':
     import seaborn
     seaborn.set(font="Fira Sans", style="ticks")
     plt.rcParams["image.cmap"] = "viridis"
-    fig = testFourPhaseModel()
-    fig.savefig("4PM_value_range.pdf")
+    fig = testFourPhaseModelBrandt()
+    fig.savefig("4PM_Brandt_value_range.pdf")

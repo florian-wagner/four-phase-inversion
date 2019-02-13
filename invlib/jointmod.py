@@ -42,10 +42,10 @@ class JointMod(pg.ModellingBase):
         self.jacRSTA = pg.MultRightMatrix(jacRST, r=1. / self.fpm.va)
         self.jacRSTR = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
 
-        self.jacERTW = pg.MultRightMatrix(
-            jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
-        self.jacERTR = pg.MultRightMatrix(
-            jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
+        self.jacERTW = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
+        self.jacERTI = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fi(fw, fi, fa, fr))
+        self.jacERTA = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fa(fw, fi, fa, fr))
+        self.jacERTR = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
 
         # Putting subjacobians together in block matrix
         self.jac = pg.BlockMatrix()
@@ -56,6 +56,8 @@ class JointMod(pg.ModellingBase):
         self.jac.addMatrix(self.jacRSTR, nData, self.cellCount * 3)
         nData += self.RST.fop.data().size()  # update total vector length
         self.jac.addMatrix(self.jacERTW, nData, 0)
+        self.jac.addMatrix(self.jacERTI, nData, self.cellCount)
+        self.jac.addMatrix(self.jacERTA, nData, self.cellCount * 2)
         self.jac.addMatrix(self.jacERTR, nData, self.cellCount * 3)
         self.setJacobian(self.jac)
 
