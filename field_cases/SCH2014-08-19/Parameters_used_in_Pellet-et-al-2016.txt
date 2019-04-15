@@ -1,0 +1,33 @@
+Schilthorn 2014-08-19 parameters used in Pellet et al. 2016
+
+##########################
+# 4-Phase Model parameters
+##########################
+
+% fixed parameters
+vi = 3500;                                      %Seismic velocity of the ice
+vw = 1500;                                      %Seismic velocity of the water
+va = 300;                                       %Seismic velocity of the air
+
+%site specific parameters
+vr     = 6000;                                  %Seismic velocity of the rock
+rw     = 60;                                    %Resistivity of the pore water #83 from the GEO4ICE measurements also #476 measured at Schilthorn
+a       = 1;                                    %Archie's a
+mfix    = 1.4;                                  %Archie's m
+nfix    = 2.4;                                    %Archie's n -> TPM assumes n = m, just need to change n!!!!
+fr_fix = 0.522;                                  %prescribed rock content for FPM_phifix
+zres    = 0.5;                                  %define vertical resolution [m] --> will only be used for virtual boreholes
+
+
+####################
+# Borehole positions
+####################
+
+% positions of (virtual) boreholes
+xx=[10 10];     yy=[-10 0];         % position borehole 1 (SCH-5198)
+xx2=[26 26];    yy2=[-20 0];        % position borehole 2 (SCH-5000)
+
+
+# Thaw depth (2014-08-19) retrieved by Coline from http://shinypermos.geo.uzh.ch/app/BoreholeDataBrowser/
+thawDepth = 2.0  % position borehole 1 (SCH-5198)
+thawDepth2 = 2.2 % position borehole 2 (SCH-5000)
