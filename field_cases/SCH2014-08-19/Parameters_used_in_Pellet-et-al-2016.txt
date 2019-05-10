@@ -31,3 +31,10 @@ xx2=[26 26];    yy2=[-20 0];        % position borehole 2 (SCH-5000)
 # Thaw depth (2014-08-19) retrieved by Coline from http://shinypermos.geo.uzh.ch/app/BoreholeDataBrowser/
 thawDepth = 2.0  % position borehole 1 (SCH-5198)
 thawDepth2 = 2.2 % position borehole 2 (SCH-5000)
+
+
+# Soil moisture: volumetric water content at x = 13 m; z = 10,30,50 cm; y = 4 m
+# values at 12:00 on 2014-08-19 at SCH
+sm10 = 12.72 % in volumetric %
+sm30 = 37.06
+sm50 = 13.79
