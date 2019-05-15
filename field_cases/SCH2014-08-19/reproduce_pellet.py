@@ -3,19 +3,29 @@
 This script aims to replot the results from Pellet et al. (2016)
 """
 
+#############################################
+# to find "invlib" in the main folder
+import sys
+import os
+sys.path.insert(0, os.path.abspath("../.."))
+#############################################
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import AxesGrid
 
 import pygimli as pg
+from invlib import FourPhaseModel
 
 dxy = 0.5  # spacing used in x and y direction
 
-def plot_boreholes(ax):
-    ax.plot([10, 10], [-10, 0], "k-")
-    ax.plot([26, 26], [-20, 0], "k-")
-    ax.plot([9, 11], [-2, -2], "k-")
-    ax.plot([25, 27], [-2.2, -2.2], "k-")
+
+def plot_boreholes(ax, **kwargs):
+    ax.plot([10, 10], [-10, 0], "k-", **kwargs)
+    ax.plot([26, 26], [-20, 0], "k-", **kwargs)
+    ax.plot([9, 11], [-2, -2], "k-", **kwargs)
+    ax.plot([25, 27], [-2.2, -2.2], "k-", **kwargs)
+
 
 def load_result(path):
     mat = np.loadtxt(path)
@@ -25,8 +35,8 @@ def load_result(path):
 
 
 labs = [
-    r"Porosity $\phi$", r"Ice content / $\phi$",
-    r"Water content / $\phi$", r"Air content / $\phi$"
+    r"Porosity $\phi$", r"Ice content / $\phi$", r"Water content / $\phi$",
+    r"Air content / $\phi$"
 ]
 fa = load_result("./SCH2014-08-19_Pellet-et-al-2016_fa.txt")
 fi = load_result("./SCH2014-08-19_Pellet-et-al-2016_fi.txt")
@@ -64,3 +74,14 @@ pg.mplviewer.createColorBarOnly(cMin=0, cMax=100, cMap="jet_r",
                                 orientation="vertical", ax=grid.cbar_axes[0])
 fig.tight_layout()
 fig.savefig("pellet_2016_fig7a-d.pdf", bbox_inches="tight")
+mesh.save("grid.bms")
+np.savetxt("phi_grid.dat", phi["vec"])
+
+fpm = FourPhaseModel(phi=phi["vec"], va=300., vi=3500., vw=1500, m=1.4, n=2.4,
+                     rhow=60, vr=6000)
+
+vel = 1 / fpm.slowness(fw["vec"], fi["vec"], fa["vec"])
+rho = fpm.rho(fw["vec"], fi["vec"], fa["vec"])
+
+np.savez("pellet.npz", fa=fa["vec"], fi=fi["vec"], fw=fw["vec"],
+         phi=phi["vec"], mask=vec["cov"], vel=vel, rho=rho)
