@@ -118,19 +118,19 @@ class JointMod(pg.ModellingBase):
                 cMap="Spectral_r")
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")
 
-    def showFit(self, model):
+    def ERTchi2(self, model, error):
+        resp = self.response(model)   
+        resprhoa = resp[self.RST.dataContainer.size():] 
+        rhoaerr = error[self.RST.dataContainer.size():]
+        chi2rhoa = pg.utils.chi2(self.ERT.data("rhoa"), resprhoa, rhoaerr)
+        return chi2rhoa
+
+    def RSTchi2(self, model, error, data):
         resp = self.response(model)
-
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        self.RST.showData(response=resp[:self.RST.dataContainer.size()],
-                          ax=ax1)
-        resprhoa = resp[self.RST.dataContainer.size():]
-
-        fit = (self.ERT.data("rhoa") - resprhoa) / resprhoa * 100
-        lim = np.max(np.abs(fit))
-        pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim,
-                label="Relative fit", cMap="RdBu_r", ax=ax2)
-        fig.show()
+        resptt = resp[:self.RST.dataContainer.size()]
+        tterr = error[:self.RST.dataContainer.size()]
+        chi2tt = pg.utils.chi2(data, resptt, tterr)
+        return chi2tt
 
     def response(self, model):
         return self.response_mt(model)
