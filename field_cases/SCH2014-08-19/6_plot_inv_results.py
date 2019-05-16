@@ -26,7 +26,6 @@ est = np.load("conventional.npz")
 joint = np.load("joint_inversion.npz")
 pellet = np.load("pellet.npz")
 sensors = np.loadtxt("sensors.npy")
-sensorsZ = np.loadtxt("sensorsZ.npy")
 
 # Pellet et al. (2006)
 vel, rho, fr, fa, fi, fw, gridcov = pellet["vel"], pellet["rho"], 1 - pellet[
@@ -89,6 +88,7 @@ def draw(ax, mesh, model, **kwargs):
     model = np.array(model)
     if not np.isclose(model.min(), 0.0, atol=9e-3) and (model < 0).any():
         model = np.ma.masked_where(model < 0, model)
+        model = np.ma.masked_where(model > 1, model)
 
     if "coverage" in kwargs:
         model = np.ma.masked_where(kwargs["coverage"] == 0, model)
@@ -141,13 +141,13 @@ for i, (row, data, label,
     elif i == 1:
         lims = {"cMin": 600, "cMax": 2000}
     elif i == 2:  # water
-        lims = {"cMin": 0.35, "cMax": 0.75}
+        lims = {"cMin": 0.4, "cMax": 0.65}
     elif i == 3:  # ice
         lims = {"cMin": 0, "cMax": 0.5}
     elif i == 4:  # air
-        lims = {"cMin": 0, "cMax": 0.65}
+        lims = {"cMin": 0, "cMax": 0.5}
     elif i == 5:  # rock
-        lims = {"cMin": 0.3, "cMax": 0.8}
+        lims = {"cMin": 0.3, "cMax": 0.9}
     else:
         lims = lim(list(data[0][cov > 0]) + list(data[1][cov > 0]))
     print(lims)
@@ -157,7 +157,7 @@ for i, (row, data, label,
         if data[j] is None:
             ims.append(None)
             continue
-        coverage = gridcov if j is 0 else cov
+        coverage = gridcov if j == 0 else cov
         #color = "k" if j is 0 and i not in (1, 3, 5) else "w"
         ims.append(
             draw(ax, meshs[j], data[j], **lims, logScale=logScale,
@@ -196,8 +196,7 @@ for ax, lab in zip(grid.axes_column[2], labs):
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
-    ax.plot(sensors, sensorsZ, marker=0, lw=0, color="k",
-            ms=0.1)  # sensors along ground surface
+    ax.plot(sensors[:,0], sensors[:,1], "k.", ms=0.5)
     ax.tick_params(axis='both', which='major')
     ax.set_ylim(-16, 0)
     if i < 3:

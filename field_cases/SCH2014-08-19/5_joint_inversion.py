@@ -27,10 +27,11 @@ fix_poro = False
 if fix_poro:
     # frtrue = np.load("true_model.npz")["fr"]
     # phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
-    fr_min = 0
-    fr_max = 1
+    poro = 0.5
 else:
     poro = 0.5
+    fr_min = 0.1
+    fr_max = 0.9
     phi = np.ones(paraDomain.cellCount()) * poro
 
 fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.4, n=2.4,
@@ -48,17 +49,32 @@ rst.setMesh(paraDomain)
 rst.fop.createRefinedForwardMesh()
 
 # Setup joint modeling and inverse operators
-JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=0.5)
+JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=1)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
-error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))
-inv = JointInv(JM, data, error, frmin=0.2, frmax=0.9, lam=50, maxIter=maxIter)
+
+weighting = True
+if weighting:
+    n_rst = ttData.size()
+    n_ert = ertScheme.size()
+    avg = (n_rst + n_ert)/2
+    weight_rst = avg / n_rst
+    weight_ert = avg / n_ert
+else:
+    weight_rst = 1
+    weight_ert = 1
+
+error = pg.cat(rst.relErrorVals(ttData) / weight_rst, ertScheme("err") / weight_ert)
+inv = JointInv(JM, data, error, frmin=fr_min, frmax=fr_max, lam=80, maxIter=maxIter)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel.dat")
 rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
 fas, fis, fws, _ = fpm.all(rhostart, velstart)
 frs = np.ones_like(fas) - fpm.phi
+if not fix_poro:
+    frs[frs <= fr_min] = fr_min + 0.01
+    frs[frs >= fr_max] = fr_max - 0.01
 startmodel = np.concatenate((fws, fis, fas, frs))
 
 # Fix small values to avoid problems in first iteration
@@ -99,3 +115,8 @@ array_mask = np.array(((fae < 0) | (fae > 1 - fre))
 
 np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
          fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
+
+print("#" * 80)
+print("ERT chi^2", JM.ERTchi2(model, error))
+print("RST chi^2", JM.RSTchi2(model, error, ttData("t")))
+print("#" * 80)

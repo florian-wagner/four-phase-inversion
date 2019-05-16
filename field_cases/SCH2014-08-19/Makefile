@@ -1,4 +1,4 @@
-all: prepare mesh inv joint all
+all: prepare mesh inv joint plot
 
 prepare:
 	bash 1_get_and_prepare_data.sh

@@ -30,7 +30,7 @@ if True:
     # CM = pg.utils.geostatistics.covarianceMatrix(ert.paraDomain, I=[5, 3])
     # ert.fop.setConstraints(pg.matrix.Cm05Matrix(CM))
 
-    resinv = ert.invert(ertData, mesh=mesh, lam=50, zWeight=0.5, maxIter=maxIter)
+    resinv = ert.invert(ertData, mesh=mesh, lam=50, zWeight=1, maxIter=maxIter)
     print("ERT chi:", ert.inv.chi2())
     print("ERT rms:", ert.inv.relrms())
 
@@ -48,7 +48,7 @@ startmodel = createGradientModel2D(ttData, paraDomain, minvel, maxvel)
 np.savetxt("rst_startmodel.dat", 1/startmodel)
 #vest = rst.invert(ttData, zWeight=1, startModel=startmodel, maxIter=maxIter, lam=10)
 #vest = rst.invert(ttData, zWeight=1, maxIter=maxIter, lam=10)
-vest=rst.invert(ttData, mesh=paraDomain, zWeight=0.5, lam=100)
+vest=rst.invert(ttData, mesh=paraDomain, zWeight=1, lam=100)
 
 # vest = rst.inv.runChi1()
 print("RST chi:", rst.inv.chi2())
