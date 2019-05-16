@@ -121,20 +121,28 @@ class JointMod(pg.ModellingBase):
     def showFit(self, model):
         resp = self.response(model)
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        self.RST.showData(response=resp[:self.RST.dataContainer.size()],
-                          ax=ax1)
-        resprhoa = resp[self.RST.dataContainer.size():]
+        fig, axs = plt.subplots(2, 2, figsize=(10,10))
+        t_resp = resp[:self.RST.dataContainer.size()]
+        rhoa_resp = resp[self.RST.dataContainer.size():]
+        self.RST.showData(response=t_resp, ax=axs[0,0])
 
-        fit = (self.ERT.data("rhoa") - resprhoa) / resprhoa * 100
-        lim = np.max(np.abs(fit))
-        pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim,
-                label="Relative fit", cMap="RdBu_r", ax=ax2)
+        t_fit = t_resp - self.RST.dataContainer("t")
+        lim = np.max(np.abs(t_fit))
+        axs[0,0].set_title("Traveltime curves with fit")
+        axs[1,0].set_title("Deviation between traveltimes")
+        self.RST.showVA(vals=t_fit, ax=axs[1,0], cMin=-lim, cMax=lim, cmap="RdBu_r")
+
+        rhoa_fit = (self.ERT.data("rhoa") - rhoa_resp) / rhoa_resp * 100
+        lim = np.max(np.abs(rhoa_fit))
+        pb.show(self.ERT.data, ax=axs[0,1], label=r"Measured data $\rho_a$")
+        pb.show(self.ERT.data, vals=rhoa_fit, cMin=-lim, cMax=lim,
+                label="Relative fit (%%)", cMap="RdBu_r", ax=axs[1,1])
         fig.show()
+        return fig
 
     def ERTchi2(self, model, error): # chi2 and relative rms for the rhoa data
-        resp = self.response(model)   
-        resprhoa = resp[self.RST.dataContainer.size():] 
+        resp = self.response(model)
+        resprhoa = resp[self.RST.dataContainer.size():]
         rhoaerr = error[self.RST.dataContainer.size():]
         chi2rhoa = pg.utils.chi2(self.ERT.data("rhoa"), resprhoa, rhoaerr)
         rmsrhoa = np.mean( np.sqrt( (resprhoa - self.ERT.data("rhoa")) **2) ) / np.mean(self.ERT.data("rhoa")) *100
