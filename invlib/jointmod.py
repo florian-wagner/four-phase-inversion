@@ -118,6 +118,20 @@ class JointMod(pg.ModellingBase):
                 cMap="Spectral_r")
         pg.show(self.mesh, 1 / s, ax=axs[1, 1], label="Velocity")
 
+    def showFit(self, model):
+        resp = self.response(model)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        self.RST.showData(response=resp[:self.RST.dataContainer.size()],
+                          ax=ax1)
+        resprhoa = resp[self.RST.dataContainer.size():]
+
+        fit = (self.ERT.data("rhoa") - resprhoa) / resprhoa * 100
+        lim = np.max(np.abs(fit))
+        pb.show(self.ERT.data, vals=fit, cMin=-lim, cMax=lim,
+                label="Relative fit", cMap="RdBu_r", ax=ax2)
+        fig.show()
+
     def ERTchi2(self, model, error):
         resp = self.response(model)   
         resprhoa = resp[self.RST.dataContainer.size():] 
