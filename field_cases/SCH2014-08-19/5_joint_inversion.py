@@ -10,7 +10,15 @@ from invlib import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
-maxIter = 50
+# erte rste lam weighting zWeight
+
+erte=float(sys.argv[1])
+rste=float(sys.argv[2])
+lam=float(sys.argv[3])
+weighting=bool(sys.argv[4])
+zWeight=float(sys.argv[5])
+
+maxIter = 30
 
 # Load meshes and data
 ertScheme = pg.DataContainerERT("ert_filtered.data")
@@ -48,12 +56,15 @@ ttData = rst.dataContainer
 rst.setMesh(paraDomain)
 rst.fop.createRefinedForwardMesh()
 
+# Set errors
+ttData.set("err", np.ones(ttData.size()) * rste)
+ertScheme.set("err", np.ones(ertScheme.size()) * erte)
+
 # Setup joint modeling and inverse operators
-JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=1)
+JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=zWeight)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
 
-weighting = True
 if weighting:
     n_rst = ttData.size()
     n_ert = ertScheme.size()
@@ -65,7 +76,7 @@ else:
     weight_ert = 1
 
 error = pg.cat(rst.relErrorVals(ttData) / weight_rst, ertScheme("err") / weight_ert)
-inv = JointInv(JM, data, error, frmin=fr_min, frmax=fr_max, lam=80, maxIter=maxIter)
+inv = JointInv(JM, data, error, frmin=fr_min, frmax=fr_max, lam=lam, maxIter=maxIter)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel.dat")
@@ -117,6 +128,15 @@ np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
          fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
 
 print("#" * 80)
-print("ERT chi^2", JM.ERTchi2(model, error))
-print("RST chi^2", JM.RSTchi2(model, error, ttData("t")))
+ertchi, _ = JM.ERTchi2(model, error)
+rstchi, _ = JM.RSTchi2(model, error, ttData("t"))
+print("ERT chi^2", ertchi)
+print("RST chi^2", rstchi)
 print("#" * 80)
+
+fig = JM.showFit(model)
+title = "Overall chi^2 = %.2f" % inv.getChi2()
+title += "\nERT chi^2 = %.2f" % ertchi
+title += "\nRST chi^2 = %.2f" % rstchi
+fig.suptitle(title)
+fig.savefig("datafit.png", dpi=150)
