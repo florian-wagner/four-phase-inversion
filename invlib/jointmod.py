@@ -132,19 +132,21 @@ class JointMod(pg.ModellingBase):
                 label="Relative fit", cMap="RdBu_r", ax=ax2)
         fig.show()
 
-    def ERTchi2(self, model, error):
+    def ERTchi2(self, model, error): # chi2 and relative rms for the rhoa data
         resp = self.response(model)   
         resprhoa = resp[self.RST.dataContainer.size():] 
         rhoaerr = error[self.RST.dataContainer.size():]
         chi2rhoa = pg.utils.chi2(self.ERT.data("rhoa"), resprhoa, rhoaerr)
-        return chi2rhoa
+        rmsrhoa = np.mean( np.sqrt( (resprhoa - self.ERT.data("rhoa")) **2) ) / np.mean(self.ERT.data("rhoa")) *100
+        return chi2rhoa, rmsrhoa
 
-    def RSTchi2(self, model, error, data):
+    def RSTchi2(self, model, error, data): # chi2 and relative rms for the travel time data
         resp = self.response(model)
         resptt = resp[:self.RST.dataContainer.size()]
         tterr = error[:self.RST.dataContainer.size()]
         chi2tt = pg.utils.chi2(data, resptt, tterr)
-        return chi2tt
+        rmstt = np.mean(np.sqrt( (resptt - data) **2 ) ) / np.mean(data) *100
+        return chi2tt, rmstt
 
     def response(self, model):
         return self.response_mt(model)
