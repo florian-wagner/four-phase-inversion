@@ -5,7 +5,7 @@ from .lsqrinversion import LSQRInversion
 
 class JointInv(LSQRInversion):
 
-    def __init__(self, fop, data, error, lam=20, maxIter=50, frmin=0, frmax=1):
+    def __init__(self, fop, data, error, lam=20, beta=10000, maxIter=50, frmin=0, frmax=1):
         LSQRInversion.__init__(self, data, fop, verbose=True, dosave=True)
         self._error = pg.RVector(error)
 
@@ -49,4 +49,4 @@ class JointInv(LSQRInversion):
             phiVec = pg.cat(ones, ones - self.forwardOperator().fpm.phi)
         else:
             phiVec = ones
-        self.setParameterConstraints(self.forwardOperator()._G, phiVec, 10000)
+        self.setParameterConstraints(self.forwardOperator()._G, phiVec, beta)
