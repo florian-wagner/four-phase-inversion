@@ -145,7 +145,7 @@ class JointMod(pg.ModellingBase):
         resprhoa = resp[self.RST.dataContainer.size():]
         rhoaerr = error[self.RST.dataContainer.size():]
         chi2rhoa = pg.utils.chi2(self.ERT.data("rhoa"), resprhoa, rhoaerr)
-        rmsrhoa = np.mean( np.sqrt( (resprhoa - self.ERT.data("rhoa")) **2) ) / np.mean(self.ERT.data("rhoa")) *100
+        rmsrhoa = pg.rrms(self.ERT.data("rhoa"), resprhoa)
         return chi2rhoa, rmsrhoa
 
     def RSTchi2(self, model, error, data): # chi2 and relative rms for the travel time data
@@ -153,7 +153,7 @@ class JointMod(pg.ModellingBase):
         resptt = resp[:self.RST.dataContainer.size()]
         tterr = error[:self.RST.dataContainer.size()]
         chi2tt = pg.utils.chi2(data, resptt, tterr)
-        rmstt = np.mean(np.sqrt( (resptt - data) **2 ) ) / np.mean(data) *100
+        rmstt = np.sqrt(np.mean((resptt - data)**2))
         return chi2tt, rmstt
 
     def response(self, model):
