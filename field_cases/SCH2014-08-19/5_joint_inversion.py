@@ -12,11 +12,16 @@ from pygimli.physics import Refraction
 
 # erte rste lam weighting zWeight
 
-erte=float(sys.argv[1])
-rste=float(sys.argv[2])
-lam=float(sys.argv[3])
-weighting=bool(sys.argv[4])
-zWeight=float(sys.argv[5])
+# erte=float(sys.argv[1])
+# rste=float(sys.argv[2])
+# lam=float(sys.argv[3])
+# weighting=bool(sys.argv[4])
+# zWeight=float(sys.argv[5])
+erte = 0.03
+rste = 0.0005
+lam = 80
+weighting = False
+zWeight = 0.2
 
 maxIter = 30
 

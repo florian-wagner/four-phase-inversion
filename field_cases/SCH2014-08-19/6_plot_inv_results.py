@@ -13,7 +13,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import pygimli as pg
 from invlib import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
-from reproduce_pellet import plot_boreholes, load_result
+from reproduce_pellet import plot_boreholes
 fs = 4.5
 set_style(fs, style="seaborn-dark")
 
@@ -224,4 +224,4 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
 
 ax = grid.axes_column[0][2]
 
-fig.savefig("4PM_joint_inversion.png", dpi=300, bbox_inches="tight")
+fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
