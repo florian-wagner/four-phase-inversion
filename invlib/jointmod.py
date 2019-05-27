@@ -6,9 +6,26 @@ import pygimli as pg
 
 
 class JointMod(pg.ModellingBase):
-
     def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True,
-                 zWeight=1, verbose=True):
+                 zWeight=1, verbose=True, corr_l=None, fix_water=False,
+                 fix_ice=False, fix_air=False):
+        """Joint petrophysical modeling operator.
+
+        Parameters
+        ----------
+        mesh : pyGIMLi mesh
+        ertfop : ERT forward operator
+        rstfop : RST forward operator
+        petromodel : Petrophysical four-phase model
+        zWeight : zWeight for more or less layering
+        verbose : Be more verbose
+        corr_l : tuple
+            Horizontal and vertical correlation lengths. If provided,
+            geostatistical regularization will be used and classical smoothing
+            with zWeight will be ignored.
+        fix_poro|water|ice|air : boolean or vector
+            Fix to starting model or provide weight vector for particular cells.
+        """
         pg.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
         self.ERT = ertfop
@@ -16,8 +33,13 @@ class JointMod(pg.ModellingBase):
         self.fops = [self.RST, self.ERT]
         self.fpm = petromodel
         self.cellCount = self.mesh.cellCount()
+        self.fix_water = fix_water
+        self.fix_ice = fix_ice
+        self.fix_air = fix_air
         self.fix_poro = fix_poro
         self.zWeight = zWeight
+        # self.fix_cells = fix_cells
+        self.corr_l = corr_l
         self.createConstraints()
 
     def fractions(self, model):
@@ -42,10 +64,14 @@ class JointMod(pg.ModellingBase):
         self.jacRSTA = pg.MultRightMatrix(jacRST, r=1. / self.fpm.va)
         self.jacRSTR = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
 
-        self.jacERTW = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
-        self.jacERTI = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fi(fw, fi, fa, fr))
-        self.jacERTA = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fa(fw, fi, fa, fr))
-        self.jacERTR = pg.MultRightMatrix(jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
+        self.jacERTW = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
+        self.jacERTI = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fi(fw, fi, fa, fr))
+        self.jacERTA = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fa(fw, fi, fa, fr))
+        self.jacERTR = pg.MultRightMatrix(
+            jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
 
         # Putting subjacobians together in block matrix
         self.jac = pg.BlockMatrix()
@@ -64,18 +90,23 @@ class JointMod(pg.ModellingBase):
     def createConstraints(self):
         # First order smoothness matrix
         self._Ctmp = pg.RSparseMapMatrix()
-        rm = self.RST.fop.regionManager()
-        rm.fillConstraints(self._Ctmp)
 
-        # Set zWeight
-        rm.setZWeight(self.zWeight)
-        self.cWeight = pg.RVector()
-        rm.fillConstraintsWeight(self.cWeight)
-        self._CW = pg.LMultRMatrix(self._Ctmp, self.cWeight)
+        if self.corr_l is None:
+            pg.info("Using smoothing with zWeight = %.2f." % self.zWeight)
+            rm = self.RST.fop.regionManager()
+            rm.fillConstraints(self._Ctmp)
 
-        # # Geostatistical constraints
-        # CM = pg.utils.geostatistics.covarianceMatrix(self.mesh, I=[40, 3])
-        # self._Ctmp = pg.matrix.Cm05Matrix(CM)
+            # Set zWeight
+            rm.setZWeight(self.zWeight)
+            self.cWeight = pg.RVector()
+            rm.fillConstraintsWeight(self.cWeight)
+            self._CW = pg.LMultRMatrix(self._Ctmp, self.cWeight)
+        else:
+            pg.info("Using geostatistical constraints with " + str(self.corr_l))
+            # Geostatistical constraints by Jordi et al., GJI, 2018
+            CM = pg.utils.geostatistics.covarianceMatrix(self.mesh, I=self.corr_l)
+            self._Ctmp = pg.matrix.Cm05Matrix(CM)
+            self._CW = self._Ctmp
 
         # Putting together in block matrix
         self._C = pg.RBlockMatrix()
@@ -95,9 +126,24 @@ class JointMod(pg.ModellingBase):
         self._G.addMatrixEntry(iid, 0, self.cellCount)
         self._G.addMatrixEntry(iid, 0, self.cellCount * 2)
         self._G.addMatrixEntry(iid, 0, self.cellCount * 3)
-        # Fix f_r
-        if self.fix_poro:
-            self._G.addMatrixEntry(iid, self._G.rows(), self.cellCount * 3)
+
+        self.fix_val_matrices = {}
+        # Optionally fix phases to starting model globally or in selected cells
+        phases = ["water", "ice", "air", "rock matrix"]
+        for i, phase in enumerate([self.fix_water, self.fix_ice, self.fix_air,
+                                   self.fix_poro]):
+            name = phases[i]
+            vec = pg.RVector(self.cellCount)
+            if phase is True:
+                pg.info("Fixing %s content globally." % name)
+                vec += 1.0
+            elif hasattr(phase, "__len__"):
+                pg.info("Fixing %s content at selected cells." % name)
+                phase = np.asarray(phase, dtype="int")
+                vec[phase] = 1.0
+            self.fix_val_matrices[name] = pg.matrix.DiagonalMatrix(vec)
+            self._G.addMatrix(self.fix_val_matrices[name],
+                              self._G.rows(), self.cellCount * i)
 
     def showModel(self, model):
         fw, fi, fa, fr = self.fractions(model)
@@ -105,7 +151,7 @@ class JointMod(pg.ModellingBase):
         rho = self.fpm.rho(fw, fi, fa, fr)
         s = self.fpm.slowness(fw, fi, fa, fr)
 
-        fig, axs = plt.subplots(3, 2)
+        _, axs = plt.subplots(3, 2)
         pg.show(self.mesh, fw, ax=axs[0, 0], label="Water content", hold=True,
                 logScale=False, cMap="Blues")
         pg.show(self.mesh, fi, ax=axs[1, 0], label="Ice content", hold=True,
@@ -121,26 +167,27 @@ class JointMod(pg.ModellingBase):
     def showFit(self, model):
         resp = self.response(model)
 
-        fig, axs = plt.subplots(2, 2, figsize=(10,10))
+        fig, axs = plt.subplots(2, 2, figsize=(10, 10))
         t_resp = resp[:self.RST.dataContainer.size()]
         rhoa_resp = resp[self.RST.dataContainer.size():]
-        self.RST.showData(response=t_resp, ax=axs[0,0])
+        self.RST.showData(response=t_resp, ax=axs[0, 0])
 
         t_fit = t_resp - self.RST.dataContainer("t")
         lim = np.max(np.abs(t_fit))
-        axs[0,0].set_title("Traveltime curves with fit")
-        axs[1,0].set_title("Deviation between traveltimes")
-        self.RST.showVA(vals=t_fit, ax=axs[1,0], cMin=-lim, cMax=lim, cmap="RdBu_r")
+        axs[0, 0].set_title("Traveltime curves with fit")
+        axs[1, 0].set_title("Deviation between traveltimes")
+        self.RST.showVA(vals=t_fit, ax=axs[1, 0], cMin=-lim, cMax=lim,
+                        cmap="RdBu_r")
 
         rhoa_fit = (self.ERT.data("rhoa") - rhoa_resp) / rhoa_resp * 100
         lim = np.max(np.abs(rhoa_fit))
-        pb.show(self.ERT.data, ax=axs[0,1], label=r"Measured data $\rho_a$")
+        pb.show(self.ERT.data, ax=axs[0, 1], label=r"Measured data $\rho_a$")
         pb.show(self.ERT.data, vals=rhoa_fit, cMin=-lim, cMax=lim,
-                label="Relative fit (%%)", cMap="RdBu_r", ax=axs[1,1])
+                label="Relative fit (%%)", cMap="RdBu_r", ax=axs[1, 1])
         fig.show()
         return fig
 
-    def ERTchi2(self, model, error): # chi2 and relative rms for the rhoa data
+    def ERTchi2(self, model, error):  # chi2 and relative rms for the rhoa data
         resp = self.response(model)
         resprhoa = resp[self.RST.dataContainer.size():]
         rhoaerr = error[self.RST.dataContainer.size():]
@@ -148,7 +195,8 @@ class JointMod(pg.ModellingBase):
         rmsrhoa = pg.rrms(self.ERT.data("rhoa"), resprhoa)
         return chi2rhoa, rmsrhoa
 
-    def RSTchi2(self, model, error, data): # chi2 and relative rms for the travel time data
+    def RSTchi2(self, model, error,
+                data):  # chi2 and relative rms for the travel time data
         resp = self.response(model)
         resptt = resp[:self.RST.dataContainer.size()]
         tterr = error[:self.RST.dataContainer.size()]
@@ -175,7 +223,7 @@ class JointMod(pg.ModellingBase):
         print(" Rock:  %.2f | %.2f" % (np.min(fr), np.max(fr)))
         print("-" * 30)
         print(" SUM:   %.2f | %.2f" % (np.min(fa + fw + fi + fr),
-                                      np.max(fa + fw + fi + fr)))
+                                       np.max(fa + fw + fi + fr)))
         print("=" * 30)
         print(" Rho:   %.2e | %.2e" % (np.min(rho), np.max(rho)))
         print(" Vel:   %d | %d" % (np.min(1 / s), np.max(1 / s)))
