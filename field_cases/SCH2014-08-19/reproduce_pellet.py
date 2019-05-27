@@ -18,13 +18,13 @@ import pygimli as pg
 from invlib import FourPhaseModel
 
 dxy = 0.5  # spacing used in x and y direction
+elevation_5198 = 0.12
+elevation_5000 = 0.65
+depth_5198 = 2.1 + elevation_5198 # topo
+depth_5000 = 2.2 + elevation_5000 # topo
 
 
 def plot_boreholes(ax, **kwargs):
-    elevation_5198 = 0.12
-    elevation_5000 = 0.65
-    depth_5198 = 2.1 + elevation_5198 # topo
-    depth_5000 = 2.2 + elevation_5000 # topo
     ax.plot([10, 10], [-10, -elevation_5198], "k-", **kwargs)
     ax.plot([26, 26], [-20, -elevation_5000], "k-", **kwargs)
     ax.plot([9, 11], [-depth_5198, -depth_5198], "k-", **kwargs)

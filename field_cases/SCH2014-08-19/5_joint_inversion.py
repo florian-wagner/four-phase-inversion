@@ -10,18 +10,19 @@ from invlib import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
+from reproduce_pellet import depth_5000, depth_5198
 # erte rste lam weighting zWeight
 
-# erte=float(sys.argv[1])
-# rste=float(sys.argv[2])
-# lam=float(sys.argv[3])
-# weighting=bool(sys.argv[4])
-# zWeight=float(sys.argv[5])
-erte = 0.03
-rste = 0.0005
-lam = 80
-weighting = False
-zWeight = 0.2
+erte=float(sys.argv[1])
+rste=float(sys.argv[2])
+lam=float(sys.argv[3])
+weighting=bool(sys.argv[4])
+zWeight=float(sys.argv[5])
+# erte = 0.02
+# rste = 0.0003
+# lam = 120 # vorher 80
+# weighting = False
+# zWeight = 0.15
 
 maxIter = 30
 
@@ -65,8 +66,19 @@ rst.fop.createRefinedForwardMesh()
 ttData.set("err", np.ones(ttData.size()) * rste)
 ertScheme.set("err", np.ones(ertScheme.size()) * erte)
 
+# Find cells around boreholes to fix ice content to zero
+fixcells = []
+for cell in paraDomain.cells():
+    x, y, _ = cell.center()
+    if (x > 9) and (x < 11) and (y > -depth_5198):
+        fixcells.append(cell.id())
+    elif (x > 25) and (x < 27) and (y > -depth_5000):
+        fixcells.append(cell.id())
+fixcells = np.array(fixcells)
+
 # Setup joint modeling and inverse operators
-JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=zWeight)
+JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=zWeight,
+              fix_ice=fixcells)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
 
@@ -81,7 +93,6 @@ else:
     weight_ert = 1
 
 error = pg.cat(rst.relErrorVals(ttData) / weight_rst, ertScheme("err") / weight_ert)
-inv = JointInv(JM, data, error, frmin=fr_min, frmax=fr_max, lam=lam, maxIter=maxIter)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel.dat")
@@ -91,11 +102,16 @@ frs = np.ones_like(fas) - fpm.phi
 if not fix_poro:
     frs[frs <= fr_min] = fr_min + 0.01
     frs[frs >= fr_max] = fr_max - 0.01
+fis[fixcells] = 0.0
 startmodel = np.concatenate((fws, fis, fas, frs))
+
 
 # Fix small values to avoid problems in first iteration
 startmodel[startmodel <= 0.01] = 0.01
-inv.setModel(startmodel)
+
+inv = JointInv(JM, data, error, startmodel, frmin=fr_min, frmax=fr_max, lam=lam,
+               maxIter=maxIter)
+
 # # Set gradient starting model of f_ice, f_water, f_air = phi/3
 # velstart = np.loadtxt("rst_startmodel.dat")
 # rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
@@ -107,7 +123,6 @@ inv.setModel(startmodel)
 # startmodel = np.concatenate((conventional["fw"], conventional["fi"], conventional["fa"], rockstart))
 #
 # startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
-# inv.setModel(startmodel)
 
 # Run inversion
 model = inv.run()

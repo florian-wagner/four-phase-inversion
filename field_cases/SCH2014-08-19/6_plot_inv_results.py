@@ -143,7 +143,7 @@ for i, (row, data, label,
     elif i == 2:  # water
         lims = {"cMin": 0.4, "cMax": 0.65}
     elif i == 3:  # ice
-        lims = {"cMin": 0, "cMax": 0.5}
+        lims = {"cMin": 0, "cMax": 0.4}
     elif i == 4:  # air
         lims = {"cMin": 0, "cMax": 0.5}
     elif i == 5:  # rock
