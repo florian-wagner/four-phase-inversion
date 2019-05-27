@@ -4,8 +4,9 @@ from .lsqrinversion import LSQRInversion
 
 
 class JointInv(LSQRInversion):
-
-    def __init__(self, fop, data, error, lam=20, beta=10000, maxIter=50, frmin=0, frmax=1):
+    def __init__(self, fop, data, error, startmodel, lam=20, beta=10000,
+                 maxIter=50, fwmin=0, fwmax=1, fimin=0, fimax=1, famin=0,
+                 famax=1, frmin=0, frmax=1):
         LSQRInversion.__init__(self, data, fop, verbose=True, dosave=True)
         self._error = pg.RVector(error)
 
@@ -20,15 +21,17 @@ class JointInv(LSQRInversion):
         self.setTransData(self.dcumtrans)
 
         # Set model transformation
-        self.mcumtrans = pg.TransCumulative()
-        self.modtrans = pg.RTransLogLU(0.0001, 1.0)
-
         n = self.forwardOperator().cellCount
-        for i in range(3):
-            self.mcumtrans.add(self.modtrans, n)
+        self.mcumtrans = pg.TransCumulative()
+        self.transforms = []
+        phase_limits = [[fwmin, fwmax], [fimin, fimax],
+                        [famin, famax], [frmin, frmax]]
+        for i, (lower, upper) in enumerate(phase_limits):
+            if lower == 0:
+                lower = 0.001
+            self.transforms.append(pg.RTransLogLU(lower, upper))
+            self.mcumtrans.add(self.transforms[i], n)
 
-        self.phitrans = pg.RTransLogLU(frmin, frmax)
-        self.mcumtrans.add(self.phitrans, n)
         self.setTransModel(self.mcumtrans)
 
         # Set error
@@ -43,10 +46,9 @@ class JointInv(LSQRInversion):
         self.setLambda(lam)
         self.setDeltaPhiAbortPercent(0.25)
 
-        self.forwardOperator().createConstraints()  # Important!
-        ones = pg.RVector(self.forwardOperator()._I.rows(), 1.0)
-        if self.forwardOperator().fix_poro:
-            phiVec = pg.cat(ones, ones - self.forwardOperator().fpm.phi)
-        else:
-            phiVec = ones
-        self.setParameterConstraints(self.forwardOperator()._G, phiVec, beta)
+        fop = self.forwardOperator()
+        fop.createConstraints()  # Important!
+        ones = pg.RVector(fop._I.rows(), 1.0)
+        phiVec = pg.cat(ones, startmodel)
+        self.setParameterConstraints(fop._G, phiVec, beta)
+        self.setModel(startmodel)
