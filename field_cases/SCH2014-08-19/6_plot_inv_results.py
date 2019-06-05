@@ -1,7 +1,8 @@
 #############################################
 # to find "invlib" in the main folder
 import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
+path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
+sys.path.insert(0, path)
 #############################################
 from string import ascii_uppercase
 
@@ -14,48 +15,41 @@ import pygimli as pg
 from invlib import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
 from reproduce_pellet import plot_boreholes
-fs = 4.5
+fs = 5.5
 set_style(fs, style="seaborn-dark")
 
 # Load data
-gridmesh = pg.load("grid.bms")
-
-mesh = pg.load("mesh.bms")
-meshj = pg.load("paraDomain.bms")
+mesh1 = pg.load("paraDomain_1.bms")
+mesh2 = pg.load("paraDomain_2.bms")
 est = np.load("conventional.npz")
-joint = np.load("joint_inversion.npz")
-pellet = np.load("pellet.npz")
+joint = np.load("joint_inversion_1.npz")
+joint2 = np.load("joint_inversion_2.npz")
 sensors = np.loadtxt("sensors.npy")
 
-# Pellet et al. (2006)
-vel, rho, fr, fa, fi, fw, gridcov = pellet["vel"], pellet["rho"], 1 - pellet[
-    "phi"], pellet["fa"], pellet["fi"], pellet["fw"], pellet["mask"]
-
-fa /= pellet["phi"]
-fi /= pellet["phi"]
-fw /= pellet["phi"]
+def to_sat(fw, fi, fa, fr):
+    phi = 1-fr
+    return fw/phi, fi/phi, fa/phi
 
 # Conventional inversion
-velest, rhoest, fae, fie, fwe, mask = est["vel"], est["rho"], est["fa"], est[
-    "fi"], est["fw"], est["mask"]
+vel, rho, fa, fi, fw, cov = est["vel"], est["rho"], est["fa"], est["fi"], est["fw"], est["mask"]
+phi = fa + fi + fw
+fr = 1 - phi
 
-phie = fae + fie + fwe
-fae /= phie
-fie /= phie
-fwe /= phie
-fre = 1 - phie
+fw, fi, fa = to_sat(fw, fi, fa, fr)
+
+veljoint1, rhojoint1, faj1, fij1, fwj1, frj1, maskj1 = joint["vel"], joint["rho"], joint["fa"], joint[
+    "fi"], joint["fw"], joint["fr"], joint["mask"]
+
+fwj1, fij1, faj1 = to_sat(fwj1, fij1, faj1, frj1)
 
 # Joint inversion
-veljoint, rhojoint, faj, fij, fwj, frj, maskj = joint["vel"], joint[
-    "rho"], joint["fa"], joint["fi"], joint["fw"], joint["fr"], joint["mask"]
+veljoint2, rhojoint2, faj2, fij2, fwj2, frj2, maskj2 = joint2["vel"], joint2[
+    "rho"], joint2["fa"], joint2["fi"], joint2["fw"], joint2["fr"], joint2["mask"]
 
-faj /= 1 - frj
-fij /= 1 - frj
-fwj /= 1 - frj
-
+fwj2, fij2, faj2 = to_sat(fwj2, fij2, faj2, frj2)
 
 # Some helper functions
-def update_ticks(cb, label="", cMin=None, cMax=None):
+def update_ticks(cb, label="", logScale=False, cMin=None, cMax=None):
     t = ticker.FixedLocator([cMin, cMax])
     cb.set_ticks(t)
     ticklabels = cb.ax.yaxis.get_ticklabels()
@@ -70,6 +64,10 @@ def update_ticks(cb, label="", cMin=None, cMax=None):
                    horizontalalignment='center', verticalalignment='center',
                    rotation=90, fontsize=fs, fontweight="regular")
 
+    if logScale:
+        for i, label in enumerate(cb.ax.yaxis.get_ticklabels()):
+            if i in [2, 3]:
+                label.set_visible(False)
 
 def lim(data):
     """Return appropriate colorbar limits."""
@@ -118,7 +116,14 @@ grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.03, 0.03],
                  share_all=True, add_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
-cov = rst_cov(meshj, np.loadtxt("rst_coverage.dat"))
+cov = rst_cov(mesh1, np.loadtxt("rst_coverage.dat"))
+
+cov2 = []
+for cell in mesh2.cells():
+    center = cell.center()
+    close = mesh1.findCell(center)
+    cov2.append(cov[close.id()])
+cov2 = np.array(cov2)
 
 labels = ["v (m/s)", r"$\rho$ ($\Omega$m)"]
 labels.extend([r"f$_{\rm %s}$ / $\phi$" % x for x in "wia"])
@@ -128,10 +133,10 @@ long_labels = [
     "Velocity", "Resistivity", "Water content", "Ice content", "Air content",
     "Rock content"
 ]
-meshs = [gridmesh, meshj, meshj]
+meshs = [mesh1, mesh1, mesh2]
 cmaps = ["viridis", "Spectral_r", "Blues", "Purples", "Greens", "Oranges"]
-datas = [(vel, velest, veljoint), (rho, rhoest, rhojoint), (fw, fwe, fwj),
-         (fi, fie, fij), (fa, fae, faj), (fr, fre, frj)]
+datas = [(vel, veljoint1, veljoint2), (rho, rhojoint1, rhojoint2), (fw, fwj1, fwj2),
+         (fi, fij1, fij2), (fa, faj1, faj2), (fr, frj1, frj2)]
 
 for i, (row, data, label,
         cmap) in enumerate(zip(grid.axes_row, datas, labels, cmaps)):
@@ -141,23 +146,24 @@ for i, (row, data, label,
     elif i == 1:
         lims = {"cMin": 600, "cMax": 2000}
     elif i == 2:  # water
-        lims = {"cMin": 0.4, "cMax": 0.65}
+        lims = {"cMin": 0.3, "cMax": 0.65}
     elif i == 3:  # ice
-        lims = {"cMin": 0, "cMax": 0.4}
-    elif i == 4:  # air
         lims = {"cMin": 0, "cMax": 0.5}
+    elif i == 4:  # air
+        lims = {"cMin": 0, "cMax": 0.6}
     elif i == 5:  # rock
-        lims = {"cMin": 0.3, "cMax": 0.9}
+        lims = {"cMin": 0.2, "cMax": 0.9}
     else:
         lims = lim(list(data[0][cov > 0]) + list(data[1][cov > 0]))
-    print(lims)
     logScale = True if "rho" in label else False
     ims = []
     for j, ax in enumerate(row):
         if data[j] is None:
             ims.append(None)
             continue
-        coverage = gridcov if j == 0 else cov
+        coverage = cov2 if j == 2 else cov
+        pg.boxprint(j)
+        print(meshs[j], len(coverage), len(data[j]))
         #color = "k" if j is 0 and i not in (1, 3, 5) else "w"
         ims.append(
             draw(ax, meshs[j], data[j], **lims, logScale=logScale,
@@ -167,44 +173,41 @@ for i, (row, data, label,
         ims[j].set_cmap(cmap)
 
     cb = fig.colorbar(ims[1], cax=grid.cbar_axes[i])
-    if not logScale:
-        update_ticks(cb, label=label, **lims)
+    update_ticks(cb, label=label, logScale=logScale, **lims)
 
-for ax, title in zip(
+for ax, title, num in zip(
         grid.axes_row[0],
-    ["Pellet et al. (2016)", "Conventional inversion and 4PM", "Petrophysical joint inversion"]):
-    ax.set_title(title, fontsize=fs)  #, fontweight="bold")
-
-labs = ["replotted"] * 6
-for ax, lab in zip(grid.axes_column[0], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
+    ["Conventional inversion and 4PM\n", "Petrophysical joint inversion\n", "Petrophysical joint inversion\nwith borehole constraints"], "abc"):
+    ax.set_title(title, fontsize=fs + 1, fontweight="bold")
+    ax.set_title("(%s)\n" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
 labs = [
     "inverted", "inverted", "transformed", "transformed", "transformed",
     "assumed"
 ]
-for ax, lab in zip(grid.axes_column[1], labs):
+for ax, lab in zip(grid.axes_column[0], labs):
     add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
 labs = [
     "transformed", "transformed", "inverted", "inverted", "inverted",
     "inverted"
 ]
+for ax, lab in zip(grid.axes_column[1], labs):
+    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
 for ax, lab in zip(grid.axes_column[2], labs):
     add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
-    ax.plot(sensors[:,0], sensors[:,1], "k.", ms=0.5)
+    ax.plot(sensors[:,0], sensors[:,1] + 0.1, marker="o", lw=0, color="k", ms=0.6)
     ax.tick_params(axis='both', which='major')
-    ax.set_ylim(-16, 0)
+    ax.set_ylim(-16.5, 0.5)
     if i < 3:
         c = "w"
     else:
         c = "k"
     plot_boreholes(ax, lw=0.5, color=c)
-    # add_inner_title(ax, ascii_uppercase[i], loc=2, frame=False, c="w", fw="bold")
 
 for row in grid.axes_row[:-1]:
     for ax in row:
@@ -222,6 +225,20 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     ax.set_ylabel("Depth (m)", labelpad=1)
     # add_inner_title(ax, label, loc=2, c="k", frame=False)
 
-ax = grid.axes_column[0][2]
+ax = grid.axes_column[0][5]
 
-fig.savefig("4PM_joint_inversion.pdf", dpi=300, bbox_inches="tight")
+ax.annotate("SCH_5198",
+            xy=(10.5, -4.5), xycoords='data',
+            xytext=(5, 0), textcoords='offset points',
+            va="center", ha="left",
+            arrowprops=dict(arrowstyle="->", lw=0.5))
+
+ax.annotate("SCH_5000",
+            xy=(26.5, -6.6), xycoords='data',
+            xytext=(5, 0), textcoords='offset points',
+            va="center", ha="left",
+            arrowprops=dict(arrowstyle="->", lw=0.5))
+
+fig.savefig("Fig4_two_columns.pdf", dpi=500, bbox_inches="tight",
+            pad_inches=0.0)
+# fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")

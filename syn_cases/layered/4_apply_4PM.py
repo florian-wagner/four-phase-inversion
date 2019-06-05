@@ -9,19 +9,28 @@ import pygimli as pg
 from invlib import FourPhaseModel
 
 mesh = pg.load("mesh.bms")
-pd = pg.load("paraDomain.bms")
-resinv = np.loadtxt("res_conventional.dat")
-vest = np.loadtxt("vel_conventional.dat")
 
 if len(sys.argv) > 1:
+    pd = pg.load("paraDomain_2.bms")
+    resinv = np.loadtxt("res_conventional_2.dat")
+    vest = np.loadtxt("vel_conventional_2.dat")
     scenario = "Fig2"
     pg.boxprint(scenario)
     phi = 0.3  # Porosity assumed to calculate fi, fa, fw with 4PM
 else:
+    pd = pg.load("paraDomain_1.bms")
+    resinv = np.loadtxt("res_conventional_1.dat")
+    vest = np.loadtxt("vel_conventional_1.dat")
     scenario = "Fig1"
     pg.boxprint(scenario)
     frtrue = np.load("true_model.npz")["fr"]
-    phi = 1 - pg.interpolate(mesh, frtrue, pd.cellCenters()).array()
+
+    phi = []
+    for cell in pd.cells():
+        idx = mesh.findCell(cell.center()).id()
+        phi.append(1 - frtrue[idx])
+    phi = np.array(phi)
+    # phi = 1 - pg.interpolate(mesh, frtrue, pd.cellCenters()).array()
 
 # Save some stuff
 fpm = FourPhaseModel(phi=phi)

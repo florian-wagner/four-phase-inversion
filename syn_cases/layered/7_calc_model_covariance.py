@@ -59,9 +59,9 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
 
 # load synthetic mesh (no boundary!)
 mesh = pg.load("mesh.bms")
-meshRST = pg.load("paraDomain.bms")
+meshRST = pg.load("paraDomain_2.bms")
 meshRST.createSecondaryNodes(3)
-meshERT = pg.load("meshERT.bms")
+meshERT = pg.load("meshERT_2.bms")
 
 for cell in meshRST.cells():
     NN = mesh.findCell(cell.center())
@@ -75,7 +75,7 @@ for cell in meshERT.cells():
         cell.setMarker(len(np.unique(mesh.cellMarkers()))) # triangle boundary
 
 # create scheme files
-sensors = np.load("sensors.npy")
+sensors = np.load("sensors.npy", allow_pickle=True)
 shmERT = pg.DataContainerERT("erttrue.dat")
 shmSRT = createRAData(sensors)
 

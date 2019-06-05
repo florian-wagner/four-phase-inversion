@@ -15,7 +15,7 @@ from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
 
 mesh = pg.load("mesh.bms")
-sensors = np.load("sensors.npy")
+sensors = np.load("sensors.npy", allow_pickle=True)
 rhotrue = np.loadtxt("rhotrue.dat")
 veltrue = np.loadtxt("veltrue.dat")
 

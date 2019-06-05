@@ -20,16 +20,18 @@ set_style(fs, style="seaborn-dark")
 
 if len(sys.argv) > 1:
     scenario = "Fig2"
+    case = 2
 else:
     scenario = "Fig1"
+    case = 1
 
 # Load data
 mesh = pg.load("mesh.bms")
-meshj = pg.load("paraDomain.bms")
+meshj = pg.load("paraDomain_%d.bms" % case)
 true = np.load("true_model.npz")
 est = np.load("conventional_%s.npz" % scenario)
 joint = np.load("joint_inversion_%s.npz" % scenario)
-sensors = np.load("sensors.npy")
+sensors = np.load("sensors.npy", allow_pickle=True)
 
 # True model
 veltrue, rhotrue, fa, fi, fw, fr = true["vel"], true["rho"], true["fa"], true[
@@ -76,8 +78,9 @@ def lim(data):
 
 def draw(ax, mesh, model, **kwargs):
     model = np.array(model)
-    if not np.isclose(model.min(), 0.0, atol=9e-3) and (model < 0).any():
-        model = np.ma.masked_where(model < 0, model)
+    tol = 1e-3 # do not hide values that are very close (but below) zero
+    if not np.isclose(model.min(), 0.0, atol=tol) and (model < 0).any():
+        model = np.ma.masked_where(model < -tol, model)
 
     if "coverage" in kwargs:
         model = np.ma.masked_where(kwargs["coverage"] == 0, model)
@@ -89,16 +92,18 @@ def minmax(data):
     """Return minimum and maximum of data as a 2-line string."""
     tmp = np.array(data)
     print("max", tmp.max())
-    if np.isclose(tmp.min(), 0, atol=9e-3):
-        min = 0
-    else:
-        min = tmp.min()
+    min = tmp.min()
     if np.max(tmp) > 10 and np.max(tmp) < 1e4:
         return "min: %d | max: %d" % (min, tmp.max())
     if np.max(tmp) > 1e4:
         return "min: %d" % min + " | max: " + logFormat(tmp.max())
     else:
-        return "min: %.2f | max: %.2f" % (min, tmp.max())
+        if min < 0:
+            min = ("%.3f" % min).rstrip("0")
+        else:
+            min = ("%.2f" % min).rstrip("0")
+        max = ("%.2f" % tmp.max()).rstrip("0")
+        return "min: %s | max: %s" % (min, max)
 
 
 # %%
@@ -107,7 +112,7 @@ grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.03, 0.03],
                  share_all=True, add_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
-cov = rst_cov(meshj, np.loadtxt("rst_coverage.dat"))
+cov = rst_cov(meshj, np.loadtxt("rst_coverage_%d.dat" % case))
 
 fre = 1 - fwe - fae - fie
 
@@ -131,7 +136,15 @@ for i, (row, data, label, cmap) in enumerate(
         lims = {"cMin": 1500, "cMax": 5000}
     elif i == 1:
         lims = {"cMin": 1e3, "cMax": 1e5}
-        borderpad = 0.08
+        borderpad = 0.07
+    elif i == 2:
+        lims = {"cMin": 0.02, "cMax": 0.35}
+    elif i == 3:
+        lims = {"cMin": 0, "cMax": 0.3}
+    elif i == 4:
+        lims = {"cMin": 0, "cMax": 0.15}
+    elif i == 5:
+        lims = {"cMin": 0.6, "cMax": 0.8}
     else:
         lims = lim(
             list(data[0]) + list(data[1][cov > 0]) + list(data[2][cov > 0]))
@@ -139,8 +152,8 @@ for i, (row, data, label, cmap) in enumerate(
     logScale = True if "rho" in label else False
     ims = []
     for j, ax in enumerate(row):
-        coverage = np.ones(mesh.cellCount()) if j is 0 else cov
-        color = "k" if j is 0 and i not in (1, 3, 5) else "w"
+        coverage = np.ones(mesh.cellCount()) if j == 0 else cov
+        color = "k" if j == 0 and i not in (1, 3, 5) else "w"
         ims.append(draw(ax, meshs[j], data[j], **lims, logScale=logScale,
                    coverage=coverage))
         # ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
@@ -157,7 +170,7 @@ for ax, title, num in zip(grid.axes_row[0], [
         "True model", "Conventional inversion and 4PM",
         "Petrophysical joint inversion"], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
-    ax.set_title("%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
+    ax.set_title("(%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
 labs = [
     "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
@@ -173,7 +186,7 @@ labs = [
 
 geom = pg.load("geom.bms")
 if scenario == "Fig2":
-    labs[-1] = "inverted"
+    labs[-1] = "Inverted"
 
     # Add labels for covariance reference
     ax = grid.axes_all[0]
@@ -212,7 +225,7 @@ for i, ax in enumerate(grid.axes_all):
             np.zeros_like(sensors) + 0.1, marker="o", lw=0, color="k", ms=0.6)
     ax.tick_params(axis='both', which='major')
     ax.set_xticks([25, 50, 75, 100, 125])
-    ax.set_ylim(-25, 0)
+    ax.set_ylim(-27, 0)
     ax.set_aspect(1.85)
 
 for row in grid.axes_row[:-1]:
@@ -220,7 +233,7 @@ for row in grid.axes_row[:-1]:
         ax.xaxis.set_visible(False)
 
 for ax in grid.axes_row[-1]:
-    ax.set_xlabel("x (m)")
+    ax.set_xlabel("x (m)", labelpad=0.2)
 
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("%s_two_columns.pdf" % scenario, dpi=500, bbox_inches="tight",

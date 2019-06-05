@@ -1,7 +1,8 @@
 #############################################
 # to find "invlib" in the main folder
 import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
+path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
+sys.path.insert(0, path)
 #############################################
 import numpy as np
 
@@ -11,45 +12,52 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
 from reproduce_pellet import depth_5000, depth_5198
+
 # erte rste lam weighting zWeight
+erte = 0.03
+rste = 0.0003
 
-erte=float(sys.argv[1])
-rste=float(sys.argv[2])
-lam=float(sys.argv[3])
-weighting=bool(sys.argv[4])
-zWeight=float(sys.argv[5])
-# erte = 0.02
-# rste = 0.0003
-# lam = 120 # vorher 80
-# weighting = False
-# zWeight = 0.15
+args = sys.argv
+lam = 80
+zWeight = 0.25
+case = int(args[1])
 
-maxIter = 30
+# lam = 50
+# lam=10
+weighting = False
+# zWeight = 0.25
+maxIter = 25
+
+if case == 2:
+    case = 2
+    constrained = True
+    mesh = pg.load("mesh_2.bms")
+    paraDomain = pg.load("paraDomain_2.bms")
+else:
+    case = 1
+    constrained = False
+    mesh = pg.load("mesh_1.bms")
+    paraDomain = pg.load("paraDomain_1.bms")
+
+pg.boxprint("Calculating case %s" % case)
 
 # Load meshes and data
 ertScheme = pg.DataContainerERT("ert_filtered.data")
 
-mesh = pg.load("mesh.bms")
-paraDomain = pg.load("paraDomain.bms")
+poro = 0.53
+fr_min = 0.1
+fr_max = 0.9
+phi = np.ones(paraDomain.cellCount()) * poro
 
-conventional = np.load("conventional.npz")
-fwconventional = conventional["fw"]
-ficonventional = conventional["fi"]
-faconventional = conventional["fa"]
-
-fix_poro = False
-if fix_poro:
-    # frtrue = np.load("true_model.npz")["fr"]
-    # phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
-    poro = 0.5
-else:
-    poro = 0.5
-    fr_min = 0.1
-    fr_max = 0.9
-    phi = np.ones(paraDomain.cellCount()) * poro
-
+# fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.4, n=n,
+#                      rhow=60, vr=6000)
+# fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.56, n=2,
+                     # rhow=57.5, vr=6000)
 fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.4, n=2.4,
                      rhow=60, vr=6000)
+# elif mod == 1:
+#     fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.56, n=2,
+#                          rhow=57.5, vr=6000)
 
 # Setup managers and equip with meshes
 ert = ERTManager()
@@ -66,15 +74,19 @@ rst.fop.createRefinedForwardMesh()
 ttData.set("err", np.ones(ttData.size()) * rste)
 ertScheme.set("err", np.ones(ertScheme.size()) * erte)
 
-# Find cells around boreholes to fix ice content to zero
-fixcells = []
-for cell in paraDomain.cells():
-    x, y, _ = cell.center()
-    if (x > 9) and (x < 11) and (y > -depth_5198):
-        fixcells.append(cell.id())
-    elif (x > 25) and (x < 27) and (y > -depth_5000):
-        fixcells.append(cell.id())
-fixcells = np.array(fixcells)
+if constrained:
+    # Find cells around boreholes to fix ice content to zero
+    fixcells = []
+    for cell in paraDomain.cells():
+        x, y, _ = cell.center()
+        if (x > 9) and (x < 11) and (y > -depth_5198):
+            fixcells.append(cell.id())
+        elif (x > 25) and (x < 27) and (y > -depth_5000):
+            fixcells.append(cell.id())
+    fixcells = np.array(fixcells)
+else:
+    # Do not fix ice
+    fixcells = False
 
 # Setup joint modeling and inverse operators
 JM = JointMod(paraDomain, ert, rst, fpm, fix_poro=False, zWeight=zWeight,
@@ -95,38 +107,27 @@ else:
 error = pg.cat(rst.relErrorVals(ttData) / weight_rst, ertScheme("err") / weight_ert)
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
-velstart = np.loadtxt("rst_startmodel.dat")
+from pygimli.physics.traveltime.ratools import createGradientModel2D
+minvel = 1000
+maxvel = 5000
+velstart = 1 / createGradientModel2D(ttData, paraDomain, minvel, maxvel)
 rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
 fas, fis, fws, _ = fpm.all(rhostart, velstart)
 frs = np.ones_like(fas) - fpm.phi
-if not fix_poro:
-    frs[frs <= fr_min] = fr_min + 0.01
-    frs[frs >= fr_max] = fr_max - 0.01
-fis[fixcells] = 0.0
+frs[frs <= fr_min] = fr_min + 0.01
+frs[frs >= fr_max] = fr_max - 0.01
+if fixcells is not False:
+    fis[fixcells] = 0.0
 startmodel = np.concatenate((fws, fis, fas, frs))
 
-
 # Fix small values to avoid problems in first iteration
-startmodel[startmodel <= 0.01] = 0.01
+startmodel[startmodel <= 0.001] = 0.001
 
 inv = JointInv(JM, data, error, startmodel, frmin=fr_min, frmax=fr_max, lam=lam,
                maxIter=maxIter)
 
-# # Set gradient starting model of f_ice, f_water, f_air = phi/3
-# velstart = np.loadtxt("rst_startmodel.dat")
-# rhostart = np.ones_like(velstart) * np.mean(ertScheme("rhoa"))
-# fas, fis, fws, _ = fpm.all(rhostart, velstart)
-# startmodel = np.concatenate((fws, fis, fas, np.ones_like(fas) - fpm.phi))
-#
-# # Set result of conventional inversion as starting model
-# rockstart = np.ones_like(conventional["fi"]) - fpm.phi
-# startmodel = np.concatenate((conventional["fw"], conventional["fi"], conventional["fa"], rockstart))
-#
-# startmodel[startmodel <= 0] = np.min(startmodel[startmodel > 0])
-
 # Run inversion
 model = inv.run()
-#pg.boxprint(("Chi squared fit:", inv.getChi2()), sym="+")
 print(("Chi squared fit:", inv.getChi2()))
 
 # Save results
@@ -144,7 +145,7 @@ array_mask = np.array(((fae < 0) | (fae > 1 - fre))
                       | ((fre < 0) | (fre > 1))
                       | (fsum > 1.01))
 
-np.savez("joint_inversion.npz", vel=np.array(velest), rho=np.array(rhoest),
+np.savez("joint_inversion_%s.npz" % case, vel=np.array(velest), rho=np.array(rhoest),
          fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
 
 print("#" * 80)
@@ -159,4 +160,4 @@ title = "Overall chi^2 = %.2f" % inv.getChi2()
 title += "\nERT chi^2 = %.2f" % ertchi
 title += "\nRST chi^2 = %.2f" % rstchi
 fig.suptitle(title)
-fig.savefig("datafit.png", dpi=150)
+fig.savefig("datafit_%s.png" % case, dpi=150)
