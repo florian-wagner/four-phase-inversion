@@ -102,6 +102,7 @@ def minmax(data):
             min = ("%.3f" % min).rstrip("0")
         else:
             min = ("%.2f" % min).rstrip("0")
+        min = min.rstrip(".")
         max = ("%.2f" % tmp.max()).rstrip("0")
         return "min: %s | max: %s" % (min, max)
 

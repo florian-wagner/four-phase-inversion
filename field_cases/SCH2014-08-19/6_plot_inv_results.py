@@ -50,8 +50,7 @@ fwj2, fij2, faj2 = to_sat(fwj2, fij2, faj2, frj2)
 
 # Some helper functions
 def update_ticks(cb, label="", logScale=False, cMin=None, cMax=None):
-    t = ticker.FixedLocator([cMin, cMax])
-    cb.set_ticks(t)
+    cb.set_ticks([cMin, cMax])
     ticklabels = cb.ax.yaxis.get_ticklabels()
     for i, tick in enumerate(ticklabels):
         if i == 0:
@@ -63,11 +62,9 @@ def update_ticks(cb, label="", logScale=False, cMin=None, cMax=None):
                    xytext=(10, 0), textcoords='offset pixels',
                    horizontalalignment='center', verticalalignment='center',
                    rotation=90, fontsize=fs, fontweight="regular")
-
     if logScale:
-        for i, label in enumerate(cb.ax.yaxis.get_ticklabels()):
-            if i in [2, 3]:
-                label.set_visible(False)
+        for lab in cb.ax.yaxis.get_minorticklabels():
+            lab.set_visible(False)
 
 def lim(data):
     """Return appropriate colorbar limits."""
@@ -142,7 +139,7 @@ for i, (row, data, label,
         cmap) in enumerate(zip(grid.axes_row, datas, labels, cmaps)):
     print("Plotting", label)
     if i == 0:
-        lims = {"cMin": 1000, "cMax": 4000}
+        lims = {"cMin": 1000, "cMax": 3500}
     elif i == 1:
         lims = {"cMin": 600, "cMax": 2000}
     elif i == 2:  # water
@@ -217,7 +214,7 @@ for ax in grid.axes_column[-1]:
     ax.yaxis.set_visible(False)
 
 for ax in grid.axes_row[-1]:
-    ax.set_xlabel("x (m)")
+    ax.set_xlabel("x (m)", labelpad=0.2)
 
 for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     ax.set_yticks([-0, -5, -10, -15])

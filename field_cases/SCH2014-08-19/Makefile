@@ -17,3 +17,8 @@ joint2:
 
 plot:
 	python3 6_plot_inv_results.py
+
+copy:
+	cp -f Fig4_two_columns.pdf ../../manuscripts/1_theory_and_implementation
+	cp -f Fig5_two_columns.pdf ../../manuscripts/1_theory_and_implementation
+	cp -f Fig6_two_columns.pdf ../../manuscripts/1_theory_and_implementation

@@ -6,7 +6,8 @@ calc:
 	python3 ./2_create_syn_data.py
 
 inv:
-	python3 ./3_conventional_inversion.py
+	python3 ./3_conventional_inversion.py 1
+	python3 ./3_conventional_inversion.py 2
 
 case1:
 	python3 ./4_apply_4PM.py
@@ -21,7 +22,7 @@ case2:
 show:
 	python3 ./6_plot_inv_results.py
 	python3 ./6_plot_inv_results.py "Fig2"
-	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf" 
+	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf"
 
 copy:
 	cp -f "Fig1_two_columns.pdf" ../../manuscripts/1_theory_and_implementation
