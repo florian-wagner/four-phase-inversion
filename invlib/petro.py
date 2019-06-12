@@ -149,6 +149,8 @@ class FourPhaseModel():
                 hold=True, **kwargs)
         pg.show(mesh, self.phi, ax=axs[2, 1], label="Porosity", logScale=False,
                 hold=True, **kwargs)
+        for ax in axs.flat:
+            ax.set_facecolor("0.5")
         return fig, axs
 
 
