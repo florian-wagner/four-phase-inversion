@@ -173,12 +173,19 @@ for ax, title, num in zip(grid.axes_row[0], [
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
     ax.set_title("(%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
+def add_labs_to_col(col, labs):
+    for ax, lab in zip(grid.axes_column[col], labs):
+        if lab != "Inverted":
+            weight = "regular"
+            c = "w"
+            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False, c=c)
+
 labs = [
     "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
     "Assumed"
 ]
-for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
+
+add_labs_to_col(1, labs)
 
 labs = [
     "Transformed", "Transformed", "Inverted", "Inverted", "Inverted",
@@ -200,8 +207,7 @@ if scenario == "Fig2":
     ax.text(mesh.xmax() - 20, -10, "IV", color="w", **kwargs)
     ax.text(mid, -20, "V", **kwargs)
 
-for ax, lab in zip(grid.axes_column[2], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
+add_labs_to_col(2, labs)
 
 for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
     ax.set_yticks([-5, -15, -25])

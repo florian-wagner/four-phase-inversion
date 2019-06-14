@@ -174,32 +174,41 @@ for i, (row, data, label,
 
 for ax, title, num in zip(
         grid.axes_row[0],
-    ["Conventional inversion and 4PM\n", "Petrophysical joint inversion\n", "Petrophysical joint inversion\nwith borehole constraints"], "abc"):
+    ["Conventional inversion and 4PM\n", "Petrophysical joint inversion\n",
+     "Petrophysical joint inversion\nwith borehole constraints"], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
     ax.set_title("(%s)\n" % num, loc="left", fontsize=fs + 1, fontweight="bold")
 
 labs = [
-    "inverted", "inverted", "transformed", "transformed", "transformed",
-    "assumed"
+    "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
+    "Assumed"
 ]
-for ax, lab in zip(grid.axes_column[0], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
 
+def add_labs_to_col(col, labs):
+    for ax, lab in zip(grid.axes_column[col], labs):
+        if lab != "Inverted":
+            weight = "regular"
+            c = "w"
+            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False, c=c)
+
+add_labs_to_col(0, labs)
 labs = [
-    "transformed", "transformed", "inverted", "inverted", "inverted",
-    "inverted"
+    "Transformed", "Transformed", "Inverted", "Inverted", "Inverted",
+    "Inverted"
 ]
-for ax, lab in zip(grid.axes_column[1], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
+add_labs_to_col(1, labs)
+add_labs_to_col(2, labs)
 
-for ax, lab in zip(grid.axes_column[2], labs):
-    add_inner_title(ax, lab, loc=3, size=fs, fw="regular", frame=False, c="w")
+# Show box around ice constraint
+box = pg.load("box.bms")
+ax = grid.axes_column[2][3]
+pg.mplviewer.drawMeshBoundaries(ax, box, fitView=False, lw=0.5)
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
-    ax.plot(sensors[:,0], sensors[:,1] + 0.1, marker="o", lw=0, color="k", ms=0.6)
+    ax.plot(sensors[:, 0], sensors[:, 1] + 0.1, marker="o", lw=0, color="k", ms=0.6)
     ax.tick_params(axis='both', which='major')
-    ax.set_ylim(-16.5, 0.5)
+    ax.set_ylim(-16.5, 0.8)
     if i < 3:
         c = "w"
     else:
@@ -236,6 +245,7 @@ ax.annotate("SCH_5000",
             va="center", ha="left",
             arrowprops=dict(arrowstyle="->", lw=0.5))
 
-fig.savefig("Fig4_two_columns.pdf", dpi=500, bbox_inches="tight",
+
+fig.savefig("Fig5_two_columns.pdf", dpi=500, bbox_inches="tight",
             pad_inches=0.0)
 # fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")

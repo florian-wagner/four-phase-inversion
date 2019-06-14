@@ -12,21 +12,12 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 
 from reproduce_pellet import depth_5000, depth_5198
-
-# erte rste lam weighting zWeight
-erte = 0.03
-rste = 0.0003
+from settings import *
 
 args = sys.argv
 lam = 80
-zWeight = 0.25
 case = int(args[1])
-
-# lam = 50
-# lam=10
 weighting = False
-# zWeight = 0.25
-maxIter = 25
 
 if case == 2:
     case = 2
@@ -44,20 +35,9 @@ pg.boxprint("Calculating case %s" % case)
 # Load meshes and data
 ertScheme = pg.DataContainerERT("ert_filtered.data")
 
-poro = 0.53
 fr_min = 0.1
 fr_max = 0.9
 phi = np.ones(paraDomain.cellCount()) * poro
-
-# fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.4, n=n,
-#                      rhow=60, vr=6000)
-# fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.56, n=2,
-                     # rhow=57.5, vr=6000)
-fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.4, n=2.4,
-                     rhow=60, vr=6000)
-# elif mod == 1:
-#     fpm = FourPhaseModel(phi=phi, va=300., vi=3500., vw=1500, m=1.56, n=2,
-#                          rhow=57.5, vr=6000)
 
 # Setup managers and equip with meshes
 ert = ERTManager()

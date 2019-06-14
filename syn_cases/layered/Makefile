@@ -25,8 +25,8 @@ show:
 	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf"
 
 copy:
-	cp -f "Fig1_two_columns.pdf" ../../manuscripts/1_theory_and_implementation
-	cp -f "Fig2_two_columns.pdf" ../../manuscripts/1_theory_and_implementation
+	cp -f "Fig1_two_columns.pdf" ../../manuscripts/1_theory_and_implementation/Fig2_two_columns.pdf
+	cp -f "Fig2_two_columns.pdf" ../../manuscripts/1_theory_and_implementation/Fig3_two_columns.pdf
 
 
 all: clean calc inv case1 case2 show

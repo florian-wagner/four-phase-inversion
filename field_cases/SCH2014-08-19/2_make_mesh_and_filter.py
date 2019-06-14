@@ -4,6 +4,7 @@ import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 from reproduce_pellet import depth_5000, depth_5198
+from settings import erte, rste
 
 ertData = pb.load("ert.data")
 
@@ -22,10 +23,10 @@ for i, sensor in enumerate(ertData.sensors()):
 ertData.removeSensorIdx(idx)
 ertData.removeInvalid()
 ertData.removeUnusedSensors()
-ertData.set("err", pg.RVector(ertData.size(), 0.02))
+ertData.set("err", pg.RVector(ertData.size(), erte))
 ertData.save("ert_filtered.data")
 
-rstData.set("err", pg.RVector(rstData.size(), 0.0005))
+rstData.set("err", pg.RVector(rstData.size(), rste))
 #
 # # Remove two data points with high v_a at zero-offset
 # Calculate offset
@@ -80,32 +81,61 @@ print("Number of combined positions:", combinedSensors.sensorCount())
 print(combinedSensors)
 # %%
 
-plc = mt.createParaMeshPLC(combinedSensors, paraDX=0.1, boundary=4,
-                           paraDepth=12, paraBoundary=3, paraMaxCellSize=0.3)
-
 for case in 1, 2:
-    plc = mt.createParaMeshPLC(combinedSensors, paraDX=0.1, boundary=4,
+    if case == 2:
+        p1 = [8., 0, -0.03]
+        p2 = [12., 0, -0.23]
+        p3 = [24., 0, -0.37]
+        p4 = [28., 0, -0.69]
+        for p in p1, p2, p3, p4:
+            combinedSensors.createSensor(p)
+        combinedSensors.sortSensorsX()
+
+    plc = mt.createParaMeshPLC(combinedSensors, paraDX=0.15, boundary=4,
                                paraDepth=12, paraBoundary=3, paraMaxCellSize=0.3)
 
     if case == 2:
+        box = pg.Mesh(2)
         radius = 2.
-        for x, depth in zip([10., 26.], [depth_5198, depth_5000]):
+        points = [(p1, p2), (p3, p4)]
+        for x, depth, pts in zip([10., 26.], [depth_5198, depth_5000], points):
             start = plc.createNode(x - radius, -depth, 0.0)
+            ul = plc.createNode(pts[0][0], pts[0][2], 0.0)
+            b = plc.createEdge(start, ul, marker=20)
+            box.copyBoundary(b)
+
             end = plc.createNode(x + radius, -depth, 0.0)
+            ur = plc.createNode(pts[1][0], pts[1][2], 0.0)
+            b = plc.createEdge(end, ur, marker=20)
             plc.createEdge(start, end, marker=1)
+            box.copyBoundary(b)
+            plc.addRegionMarker([x, -1], 2, 0.5)
+
+        box.save("box.bms")
 
     for x in [10., 26.]:
         plc.addRegionMarker([x, -12.0], 2, 0.5)
 
     mesh = mt.createMesh(plc, quality=33.8)
-    mesh.save("mesh_%s.bms" % case)
+
+    # Set vertical boundaries of box to zero to allow lateral smoothing
+    if case == 2:
+        for bound in mesh.boundaries():
+            if bound.marker() == 20:
+                bound.setMarker(0)
+
+    # mesh.save("mesh_%s.bms" % case)
 
     # Extract inner domain where parameters should be estimated.
     # Outer domain is only needed for ERT forward simulation,
     # not for seismic traveltime calculations.
     paraDomain = pg.Mesh(2)
     paraDomain.createMeshByMarker(mesh, 2)
-    paraDomain.save("paraDomain_%s.bms" % case)
+    # paraDomain.save("paraDomain_%s.bms" % case)
+
+    # if case == 2:
+    #     pg.show(paraDomain)
+    #     pg.wait()
 
 # fig, ax = plt.subplots(figsize=(10, 6))
 # pg.show(mesh, showMesh=True, markers=True, ax=ax, hold=True)
