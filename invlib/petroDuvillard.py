@@ -11,6 +11,10 @@ class FourPhaseModelDuvillard():
         """Four phase model (4PM) after Hauck et al. (2011). Estimates fraction
         of ice, air and water from electrical bulk resistivity and seismic
         velocity.
+	According to Duvillard et al. (2018), in case of low pore salinity, bulk resistivitt can be apporximated by
+	bulk conductivity = fw * rhor * B * CEC  (rhor: grain density; B: apparent mobility of counterions for surface conduction; CEC: cation exchange capacity)
+	We call b = rhor * B * CEC  therefore rho = 1 / (b *fw)
+
 
         Parameters
         ----------
@@ -23,7 +27,7 @@ class FourPhaseModelDuvillard():
         vr : float or array type
             Velocity of rock in m/s (the default is 5000).
         b : float or array type
-            Parameter `b` (the default is 7.10⁽⁻⁸⁾). # b = rhog x B x CEC  (grain density * 
+            Parameter `b` (the default is 7.10⁽⁻⁸⁾). # b = rhog x B x CEC 
         phi : float or array type
             Porosity `phi` (the default is 0.4).
         rhow : float or array type
