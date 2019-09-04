@@ -4,7 +4,7 @@ by Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christia
 
 ---
 
-![https://img.shields.io/badge/powered%20by-pyGIMLi-informational?style=flat&logo=python&logoColor=white](https://www.pygimli.org)
+[![powered by pyGIMLi](https://img.shields.io/badge/powered%20by-pyGIMLi-informational?style=flat&logo=python&logoColor=white)](https://www.pygimli.org)
 
 **This repository contains the data and code to reproduce all results and figures published in the following paper:**
 
