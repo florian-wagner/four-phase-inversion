@@ -1,3 +1,5 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
@@ -9,7 +11,6 @@ from pygimli.mplviewer import drawModel
 
 fs = 5.5
 set_style(fs, style="seaborn-dark")
-
 
 if len(sys.argv) > 1:
     scenario = "Fig2"
@@ -71,7 +72,7 @@ def lim(data):
 
 def draw(ax, mesh, model, **kwargs):
     model = np.array(model)
-    tol = 1e-3 # do not hide values that are very close (but below) zero
+    tol = 1e-3  # do not hide values that are very close (but below) zero
     if not np.isclose(model.min(), 0.0, atol=tol) and (model < 0).any():
         model = np.ma.masked_where(model < -tol, model)
 
@@ -122,8 +123,8 @@ cmaps = ["viridis", "Spectral_r", "Blues", "Purples", "Greens", "Oranges"]
 datas = [(veltrue, velest, veljoint), (rhotrue, rhoest, rhojoint),
          (fw, fwe, fwj), (fi, fie, fij), (fa, fae, faj), (fr, fre, frj)]
 
-for i, (row, data, label, cmap) in enumerate(
-        zip(grid.axes_row, datas, labels, cmaps)):
+for i, (row, data, label,
+        cmap) in enumerate(zip(grid.axes_row, datas, labels, cmaps)):
     print("Plotting", label)
     borderpad = 0.2
     if i == 0:
@@ -148,8 +149,9 @@ for i, (row, data, label, cmap) in enumerate(
     for j, ax in enumerate(row):
         coverage = np.ones(mesh.cellCount()) if j == 0 else cov
         color = "k" if j == 0 and i not in (1, 3, 5) else "w"
-        ims.append(draw(ax, meshs[j], data[j], **lims, logScale=logScale,
-                   coverage=coverage))
+        ims.append(
+            draw(ax, meshs[j], data[j], **lims, logScale=logScale,
+                 coverage=coverage))
         # ax.text(0.987, 0.05, minmax(data[j]), transform=ax.transAxes, fontsize=fs,
         #         ha="right", color=color)
         add_inner_title(ax, minmax(data[j][coverage > 0]), loc=4, size=fs,
@@ -162,16 +164,20 @@ for i, (row, data, label, cmap) in enumerate(
 
 for ax, title, num in zip(grid.axes_row[0], [
         "True model", "Conventional inversion and 4PM",
-        "Petrophysical joint inversion"], "abc"):
+        "Petrophysical joint inversion"
+], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
     ax.set_title("(%s)" % num, loc="left", fontsize=fs + 1, fontweight="bold")
+
 
 def add_labs_to_col(col, labs):
     for ax, lab in zip(grid.axes_column[col], labs):
         if lab != "Inverted":
             weight = "regular"
             c = "w"
-            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False, c=c)
+            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False,
+                            c=c)
+
 
 labs = [
     "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
@@ -214,8 +220,9 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
             style = "solid"
             if np.isclose(bound.size(), 14.14, atol=0.5):
                 style = "dotted"
-            pg.mplviewer.drawSelectedMeshBoundaries(
-                ax, [bound], linewidth=0.5, linestyles=style, color="k")
+            pg.mplviewer.drawSelectedMeshBoundaries(ax, [bound], linewidth=0.5,
+                                                    linestyles=style,
+                                                    color="k")
     else:
         pg.mplviewer.drawPLC(ax, geom, fillRegion=False, lw=0.5)
 

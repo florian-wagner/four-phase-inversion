@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.path import Path
-from matplotlib.patheffects import withStroke
 from scipy.spatial import ConvexHull
 
 import pygimli as pg

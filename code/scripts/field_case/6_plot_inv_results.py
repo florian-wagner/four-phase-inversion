@@ -9,6 +9,7 @@ import pygimli as pg
 from fpinv import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
 from settings import plot_boreholes
+
 fs = 5.5
 set_style(fs, style="seaborn-dark")
 
@@ -20,27 +21,32 @@ joint = np.load("joint_inversion_1.npz")
 joint2 = np.load("joint_inversion_2.npz")
 sensors = np.loadtxt("sensors.npy")
 
+
 def to_sat(fw, fi, fa, fr):
-    phi = 1-fr
-    return fw/phi, fi/phi, fa/phi
+    phi = 1 - fr
+    return fw / phi, fi / phi, fa / phi
+
 
 # Conventional inversion
-vel, rho, fa, fi, fw, cov = est["vel"], est["rho"], est["fa"], est["fi"], est["fw"], est["mask"]
+vel, rho, fa, fi, fw, cov = est["vel"], est["rho"], est["fa"], est["fi"], est[
+    "fw"], est["mask"]
 phi = fa + fi + fw
 fr = 1 - phi
 
 fw, fi, fa = to_sat(fw, fi, fa, fr)
 
-veljoint1, rhojoint1, faj1, fij1, fwj1, frj1, maskj1 = joint["vel"], joint["rho"], joint["fa"], joint[
-    "fi"], joint["fw"], joint["fr"], joint["mask"]
+veljoint1, rhojoint1, faj1, fij1, fwj1, frj1, maskj1 = joint["vel"], joint[
+    "rho"], joint["fa"], joint["fi"], joint["fw"], joint["fr"], joint["mask"]
 
 fwj1, fij1, faj1 = to_sat(fwj1, fij1, faj1, frj1)
 
 # Joint inversion
 veljoint2, rhojoint2, faj2, fij2, fwj2, frj2, maskj2 = joint2["vel"], joint2[
-    "rho"], joint2["fa"], joint2["fi"], joint2["fw"], joint2["fr"], joint2["mask"]
+    "rho"], joint2["fa"], joint2["fi"], joint2["fw"], joint2["fr"], joint2[
+        "mask"]
 
 fwj2, fij2, faj2 = to_sat(fwj2, fij2, faj2, frj2)
+
 
 # Some helper functions
 def update_ticks(cb, label="", logScale=False, cMin=None, cMax=None):
@@ -59,6 +65,7 @@ def update_ticks(cb, label="", logScale=False, cMin=None, cMax=None):
     if logScale:
         for lab in cb.ax.yaxis.get_minorticklabels():
             lab.set_visible(False)
+
 
 def lim(data):
     """Return appropriate colorbar limits."""
@@ -126,8 +133,9 @@ long_labels = [
 ]
 meshs = [mesh1, mesh1, mesh2]
 cmaps = ["viridis", "Spectral_r", "Blues", "Purples", "Greens", "Oranges"]
-datas = [(vel, veljoint1, veljoint2), (rho, rhojoint1, rhojoint2), (fw, fwj1, fwj2),
-         (fi, fij1, fij2), (fa, faj1, faj2), (fr, frj1, frj2)]
+datas = [(vel, veljoint1, veljoint2), (rho, rhojoint1, rhojoint2),
+         (fw, fwj1, fwj2), (fi, fij1, fij2), (fa, faj1, faj2),
+         (fr, frj1, frj2)]
 
 for i, (row, data, label,
         cmap) in enumerate(zip(grid.axes_row, datas, labels, cmaps)):
@@ -166,24 +174,28 @@ for i, (row, data, label,
     cb = fig.colorbar(ims[1], cax=grid.cbar_axes[i])
     update_ticks(cb, label=label, logScale=logScale, **lims)
 
-for ax, title, num in zip(
-        grid.axes_row[0],
-    ["Conventional inversion and 4PM\n", "Petrophysical joint inversion\n",
-     "Petrophysical joint inversion\nwith borehole constraints"], "abc"):
+for ax, title, num in zip(grid.axes_row[0], [
+        "Conventional inversion and 4PM\n", "Petrophysical joint inversion\n",
+        "Petrophysical joint inversion\nwith borehole constraints"
+], "abc"):
     ax.set_title(title, fontsize=fs + 1, fontweight="bold")
-    ax.set_title("(%s)\n" % num, loc="left", fontsize=fs + 1, fontweight="bold")
+    ax.set_title("(%s)\n" % num, loc="left", fontsize=fs + 1,
+                 fontweight="bold")
 
 labs = [
     "Inverted", "Inverted", "Transformed", "Transformed", "Transformed",
     "Assumed"
 ]
 
+
 def add_labs_to_col(col, labs):
     for ax, lab in zip(grid.axes_column[col], labs):
         if lab != "Inverted":
             weight = "regular"
             c = "w"
-            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False, c=c)
+            add_inner_title(ax, lab, loc=3, size=fs, fw=weight, frame=False,
+                            c=c)
+
 
 add_labs_to_col(0, labs)
 labs = [
@@ -200,7 +212,8 @@ pg.mplviewer.drawMeshBoundaries(ax, box, fitView=False, lw=0.5)
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")
-    ax.plot(sensors[:, 0], sensors[:, 1] + 0.1, marker="o", lw=0, color="k", ms=0.6)
+    ax.plot(sensors[:, 0], sensors[:, 1] + 0.1, marker="o", lw=0, color="k",
+            ms=0.6)
     ax.tick_params(axis='both', which='major')
     ax.set_ylim(-16.5, 0.8)
     if i < 3:
@@ -227,18 +240,13 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
 
 ax = grid.axes_column[0][5]
 
-ax.annotate("SCH_5198",
-            xy=(10.5, -4.5), xycoords='data',
-            xytext=(5, 0), textcoords='offset points',
-            va="center", ha="left",
+ax.annotate("SCH_5198", xy=(10.5, -4.5), xycoords='data', xytext=(5, 0),
+            textcoords='offset points', va="center", ha="left",
             arrowprops=dict(arrowstyle="->", lw=0.5))
 
-ax.annotate("SCH_5000",
-            xy=(26.5, -6.6), xycoords='data',
-            xytext=(5, 0), textcoords='offset points',
-            va="center", ha="left",
+ax.annotate("SCH_5000", xy=(26.5, -6.6), xycoords='data', xytext=(5, 0),
+            textcoords='offset points', va="center", ha="left",
             arrowprops=dict(arrowstyle="->", lw=0.5))
-
 
 fig.savefig("Fig5_two_columns.pdf", dpi=500, bbox_inches="tight",
             pad_inches=0.0)

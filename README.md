@@ -58,7 +58,7 @@ in it:
 
 Before running any code you must activate the conda environment:
 
-    source activate four-phase-inversion
+    conda activate four-phase-inversion
 
 This will enable the environment for your current terminal session.
 Any subsequent commands will use software that is installed in the environment.
@@ -73,6 +73,16 @@ If all goes well, the manuscript PDF will be placed in `manuscript/output`.
 You can also run individual steps in the process using the `Makefile`s from the
 `code` and `manuscript` folders. See the respective `README.md` files for
 instructions.
+
+## Quick example combining the steps above
+
+    git clone https://github.com/florian-wagner/four-phase-inversion.git
+    cd four-phase-inversion
+    conda env create
+    conda activate four-phase-inversion
+    cd code
+    make build
+    make all
 
 ## License
 
