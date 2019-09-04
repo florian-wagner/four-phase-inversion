@@ -1,4 +1,7 @@
-literature/*
+# Latex output files
+manuscript/output
+
+
 *.vector
 *.dat
 *.bms
