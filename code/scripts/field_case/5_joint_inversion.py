@@ -1,17 +1,10 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
-sys.path.insert(0, path)
-#############################################
 import numpy as np
 
 import pygimli as pg
 from fpinv import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
-
-from reproduce_pellet import depth_5000, depth_5198
+from pygimli.physics.traveltime.ratools import createGradientModel2D
 from settings import *
 
 args = sys.argv
@@ -77,17 +70,17 @@ data = pg.cat(ttData("t"), ertScheme("rhoa"))
 if weighting:
     n_rst = ttData.size()
     n_ert = ertScheme.size()
-    avg = (n_rst + n_ert)/2
+    avg = (n_rst + n_ert) / 2
     weight_rst = avg / n_rst
     weight_ert = avg / n_ert
 else:
     weight_rst = 1
     weight_ert = 1
 
-error = pg.cat(rst.relErrorVals(ttData) / weight_rst, ertScheme("err") / weight_ert)
+error = pg.cat(
+    rst.relErrorVals(ttData) / weight_rst,
+    ertScheme("err") / weight_ert)
 
-# Set gradient starting model of f_ice, f_water, f_air = phi/3
-from pygimli.physics.traveltime.ratools import createGradientModel2D
 minvel = 1000
 maxvel = 5000
 velstart = 1 / createGradientModel2D(ttData, paraDomain, minvel, maxvel)
@@ -103,8 +96,8 @@ startmodel = np.concatenate((fws, fis, fas, frs))
 # Fix small values to avoid problems in first iteration
 startmodel[startmodel <= 0.001] = 0.001
 
-inv = JointInv(JM, data, error, startmodel, frmin=fr_min, frmax=fr_max, lam=lam,
-               maxIter=maxIter)
+inv = JointInv(JM, data, error, startmodel, frmin=fr_min, frmax=fr_max,
+               lam=lam, maxIter=maxIter)
 
 # Run inversion
 model = inv.run()
@@ -125,8 +118,8 @@ array_mask = np.array(((fae < 0) | (fae > 1 - fre))
                       | ((fre < 0) | (fre > 1))
                       | (fsum > 1.01))
 
-np.savez("joint_inversion_%s.npz" % case, vel=np.array(velest), rho=np.array(rhoest),
-         fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
+np.savez("joint_inversion_%s.npz" % case, vel=np.array(velest),
+         rho=np.array(rhoest), fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
 
 print("#" * 80)
 ertchi, _ = JM.ERTchi2(model, error)
@@ -134,10 +127,3 @@ rstchi, _ = JM.RSTchi2(model, error, ttData("t"))
 print("ERT chi^2", ertchi)
 print("RST chi^2", rstchi)
 print("#" * 80)
-
-fig = JM.showFit(model)
-title = "Overall chi^2 = %.2f" % inv.getChi2()
-title += "\nERT chi^2 = %.2f" % ertchi
-title += "\nRST chi^2 = %.2f" % rstchi
-fig.suptitle(title)
-fig.savefig("datafit_%s.png" % case, dpi=150)

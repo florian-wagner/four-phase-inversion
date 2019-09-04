@@ -2,9 +2,9 @@ import numpy as np
 
 import pybert as pb
 import pygimli as pg
+pg.verbose = print # temporary
 import pygimli.meshtools as mt
-from reproduce_pellet import depth_5000, depth_5198
-from settings import erte, rste
+from settings import depth_5000, depth_5198, erte, rste
 
 ertData = pb.load("ert.data")
 
@@ -39,7 +39,7 @@ rstData.markInvalid((offset < 5) & (va > 800))
 #
 # # Remove shot 27, too high apparent velocities
 rstData.markInvalid(np.isclose(rstData("s"), 27))
-rstData.markInvalid(210) # outlier
+rstData.markInvalid(210)  # outlier
 rstData.removeInvalid()
 rstData.save("rst_filtered.data")
 rstData = pg.DataContainer("rst_filtered.data", "s g")
@@ -50,8 +50,6 @@ print(ertData)
 print(len(ertData.sensorPositions()))
 for pos in ertData.sensorPositions():
     print(pos)
-# %%
-
 
 def is_close(pos, data, tolerance=0.1):
     for posi in data.sensorPositions():
@@ -92,7 +90,8 @@ for case in 1, 2:
         combinedSensors.sortSensorsX()
 
     plc = mt.createParaMeshPLC(combinedSensors, paraDX=0.15, boundary=4,
-                               paraDepth=12, paraBoundary=3, paraMaxCellSize=0.3)
+                               paraDepth=12, paraBoundary=3,
+                               paraMaxCellSize=0.3)
 
     if case == 2:
         box = pg.Mesh(2)
@@ -124,26 +123,11 @@ for case in 1, 2:
             if bound.marker() == 20:
                 bound.setMarker(0)
 
-    # mesh.save("mesh_%s.bms" % case)
+    mesh.save("mesh_%s.bms" % case)
 
     # Extract inner domain where parameters should be estimated.
     # Outer domain is only needed for ERT forward simulation,
     # not for seismic traveltime calculations.
     paraDomain = pg.Mesh(2)
     paraDomain.createMeshByMarker(mesh, 2)
-    # paraDomain.save("paraDomain_%s.bms" % case)
-
-    # if case == 2:
-    #     pg.show(paraDomain)
-    #     pg.wait()
-
-# fig, ax = plt.subplots(figsize=(10, 6))
-# pg.show(mesh, showMesh=True, markers=True, ax=ax, hold=True)
-# ax.set_xlim(x[0] - 10, x[-1] + 10)
-# ax.set_ylim(-45, max(z) + 5)
-# ax.plot(pg.x(ertData.sensorPositions()), pg.z(ertData.sensorPositions()), "ro",
-#         ms=3, label="Electrodes")
-# ax.plot(pg.x(rstData.sensorPositions()), pg.z(rstData.sensorPositions()), "bv",
-#         ms=3, label="Geophones")
-# ax.legend()
-# fig.savefig("mesh_with_sensors.png")
+    paraDomain.save("paraDomain_%s.bms" % case)

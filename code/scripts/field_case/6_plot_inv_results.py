@@ -1,9 +1,3 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
-sys.path.insert(0, path)
-#############################################
 from string import ascii_uppercase
 
 import matplotlib.pyplot as plt
@@ -14,7 +8,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import pygimli as pg
 from fpinv import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
-from reproduce_pellet import plot_boreholes
+from settings import plot_boreholes
 fs = 5.5
 set_style(fs, style="seaborn-dark")
 

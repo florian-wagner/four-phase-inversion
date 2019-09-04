@@ -1,14 +1,8 @@
-############################################
-# to find "invlib" in the main folder
-import sys, os
-path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
-sys.path.insert(0, path)
-#############################################
-
 import numpy as np
 
 import pybert as pb
 import pygimli as pg
+pg.verbose = print # Temporary fix
 import pygimli.meshtools as mt
 
 from fpinv import FourPhaseModel, NN_interpolate

@@ -1,3 +1,4 @@
+import sys
 
 import numpy as np
 
@@ -5,8 +6,6 @@ import pygimli as pg
 from fpinv import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
-
-
 
 # Settings
 if len(sys.argv) > 1:

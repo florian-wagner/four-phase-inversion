@@ -23,7 +23,7 @@ show:
 	python3 ./6_plot_inv_results.py
 	python3 ./6_plot_inv_results.py "Fig2"
 	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf"
-	../run_notebook.sh 8_plot_matrix.ipynb
+	bash ../../run_notebook.sh 8_plot_matrix.ipynb
 
 matrix:
 	python3 7_calc_model_covariance.py
