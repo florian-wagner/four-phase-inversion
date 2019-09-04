@@ -7,13 +7,6 @@
 # Set the package name
 PACKAGE = fpinv
 
-# Execute a notebook on the command line. Modifies the notebook inplace so the
-# final execution order will be linear (from top to bottom). Running notebooks
-# like this helps ensure that the final results are not a product of a
-# non-linear execution order that can't be reproduced.
-RUN = bash run_notebook.sh
-
-
 # TARGETS
 ###############################################################################
 
@@ -37,4 +30,5 @@ build:
 	python setup.py install
 
 results:
+	make -C scripts/field_case all
 	make -C scripts/synthetic_case all
