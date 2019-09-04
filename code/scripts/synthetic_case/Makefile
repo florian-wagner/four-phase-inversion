@@ -1,5 +1,5 @@
 clean:
-	rm -rf *.bmat *.png *.npy *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
+	rm -rf *.bmat *.npz *.png *.npy *.vector *.dat *.vec invalid.data *.vtk *.bms constraint.matrix && ls
 
 calc:
 	python3 ./1_create_model.py
@@ -23,10 +23,9 @@ show:
 	python3 ./6_plot_inv_results.py
 	python3 ./6_plot_inv_results.py "Fig2"
 	xdg-open "Fig1_two_columns.pdf" & xdg-open "Fig2_two_columns.pdf"
+	../run_notebook.sh 8_plot_matrix.ipynb
 
-copy:
-	cp -f "Fig1_two_columns.pdf" ../../manuscripts/1_theory_and_implementation/Fig2_two_columns.pdf
-	cp -f "Fig2_two_columns.pdf" ../../manuscripts/1_theory_and_implementation/Fig3_two_columns.pdf
+matrix:
+	python3 7_calc_model_covariance.py
 
-
-all: clean calc inv case1 case2 show
+all: clean calc inv case1 case2 matrix show

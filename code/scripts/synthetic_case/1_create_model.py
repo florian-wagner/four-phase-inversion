@@ -1,16 +1,8 @@
-#############################################
-# to find "invlib" in the main folder
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
-
 import numpy as np
 
 import pygimli as pg
 import pygimli.meshtools as mt
-from invlib import FourPhaseModel
+from fpinv import FourPhaseModel
 
 # Model creation
 world = mt.createWorld([0, -30], [150, 0], layers=[-5, -15], worldMarker=False)
@@ -26,7 +18,7 @@ geom.save("geom.bms")
 
 mesh = mt.createMesh(geom, area=1.0)
 
-pg.show(mesh, markers=True)
+# pg.show(mesh, markers=True)
 
 # Model creation based on pore fractions
 philayers = np.array([0.4, 0.3, 0.3, 0.3, 0.2])
@@ -51,16 +43,16 @@ vellayers = 1. / fpm.slowness(fwlayers, filayers, falayers, frlayers)
 print(rholayers)
 print(vellayers)
 
+
 def to_mesh(data):
     return data[mesh.cellMarkers()]
+
 
 rhotrue = to_mesh(rholayers)
 veltrue = to_mesh(vellayers)
 
-
 # %%
 # Save sensors, true model and mesh
-
 fa = to_mesh(falayers)
 fi = to_mesh(filayers)
 fw = to_mesh(fwlayers)
@@ -68,21 +60,18 @@ fr = to_mesh(frlayers)
 
 fpm.fr = fr
 fpm.phi = 1 - fr
-fpm.show(mesh, rhotrue, veltrue)
+# fpm.show(mesh, rhotrue, veltrue)
 
 assert np.allclose(fa + fi + fw + fr, 1)
 
-np.savez("true_model.npz", rho=rhotrue, vel=veltrue, fa=fa, fi=fi, fw=fw, fr=fr)
+np.savez("true_model.npz", rho=rhotrue, vel=veltrue, fa=fa, fi=fi, fw=fw,
+         fr=fr)
 
 sensors = np.arange(10, 141, 2.5, dtype="float")
 print(sensors)
 print("Sensors", len(sensors))
-# sensors = np.linspace(10, 120, 48)
-# ax, _ = pg.show(mesh)
-# ax.plot(sensors, np.zeros_like(sensors), "ro")
 sensors.dump("sensors.npy")
 
 mesh.save("mesh.bms")
 np.savetxt("rhotrue.dat", rhotrue)
 np.savetxt("veltrue.dat", veltrue)
-pg.wait()

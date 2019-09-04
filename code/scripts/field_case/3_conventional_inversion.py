@@ -11,7 +11,7 @@ import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 
-from invlib import FourPhaseModel, NN_interpolate
+from fpinv import FourPhaseModel, NN_interpolate
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from settings import *

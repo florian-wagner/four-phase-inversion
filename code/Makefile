@@ -37,3 +37,4 @@ build:
 	python setup.py install
 
 results:
+	make -C scripts/synthetic_case all

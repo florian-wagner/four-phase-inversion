@@ -5,7 +5,7 @@ path = os.popen("git rev-parse --show-toplevel").read().strip("\n")
 sys.path.insert(0, path)
 #############################################
 
-from invlib import FourPhaseModel
+from fpinv import FourPhaseModel
 
 # Inversion settings
 zWeight = 0.25 # four times more smoothing in lateral direction

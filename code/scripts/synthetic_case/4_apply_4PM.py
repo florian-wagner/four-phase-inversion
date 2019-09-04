@@ -1,12 +1,7 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
-
+import sys
 import numpy as np
 import pygimli as pg
-from invlib import FourPhaseModel
+from fpinv import FourPhaseModel
 
 mesh = pg.load("mesh.bms")
 
@@ -30,7 +25,6 @@ else:
         idx = mesh.findCell(cell.center()).id()
         phi.append(1 - frtrue[idx])
     phi = np.array(phi)
-    # phi = 1 - pg.interpolate(mesh, frtrue, pd.cellCenters()).array()
 
 # Save some stuff
 fpm = FourPhaseModel(phi=phi)

@@ -1,9 +1,3 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
-
 import numpy as np
 
 import pybert as pb
@@ -30,7 +24,9 @@ ertScheme.removeInvalid()
 ert = ERTManager()
 
 # Create suitable mesh for ert forward calculation
-meshERTFWD = mt.createParaMesh(ertScheme, quality=33.5, paraMaxCellSize=1.0,
+# NOTE: In the published results paraMaxCellSize=1.0 was used, which is
+# increased here to allow testing on Continuous Integration services.
+meshERTFWD = mt.createParaMesh(ertScheme, quality=33.5, paraMaxCellSize=2.0,
                                paraDX=0.2, boundaryMaxCellSize=50,
                                smooth=[1, 10], paraBoundary=30)
 pg.show(meshERTFWD)

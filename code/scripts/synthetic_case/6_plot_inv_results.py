@@ -1,17 +1,10 @@
-#############################################
-# to find "invlib" in the main folder
-import os
-import sys
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
-
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 import pygimli as pg
-from invlib import add_inner_title, logFormat, rst_cov, set_style
+from fpinv import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
 
 fs = 5.5
@@ -242,6 +235,5 @@ for row in grid.axes_row[:-1]:
 for ax in grid.axes_row[-1]:
     ax.set_xlabel("x (m)", labelpad=0.2)
 
-# fig.savefig("4PM_joint_inversion.png", dpi=150, bbox_inches="tight")
 fig.savefig("%s_two_columns.pdf" % scenario, dpi=500, bbox_inches="tight",
             pad_inches=0.0)

@@ -9,6 +9,8 @@ from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime.ratools import createGradientModel2D
 
+pg.verbose = print # temporary
+
 ############
 # Settings
 maxIter = 15
@@ -57,7 +59,6 @@ meshERT.save("meshERT_%d.bms" % case)
 # ERT inversion
 ert = ERTManager()
 ert.setMesh(meshERT)
-# ert.fop.createRefinedForwardMesh()
 
 resinv = ert.invert(ertData, lam=30, zWeight=zWeight, maxIter=maxIter)
 print("ERT chi: %.2f" % ert.inv.chi2())

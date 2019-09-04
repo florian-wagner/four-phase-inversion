@@ -1,21 +1,17 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
 
 import numpy as np
 
 import pygimli as pg
-from invlib import FourPhaseModel, JointMod, JointInv
+from fpinv import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
+
 
 
 # Settings
 if len(sys.argv) > 1:
     scenario = "Fig2"
-    poro = 0.3 # startmodel if poro is estimated
+    poro = 0.3  # startmodel if poro is estimated
     fix_poro = False
     poro_min = 0.15
     poro_max = 0.45
@@ -58,7 +54,6 @@ if fix_poro:
         idx = mesh.findCell(cell.center()).id()
         phi.append(1 - frtrue[idx])
     phi = np.array(phi)
-    # phi = 1 - pg.interpolate(mesh, frtrue, meshRST.cellCenters()).array()
     fr_min = 0
     fr_max = 1
 else:
@@ -94,8 +89,8 @@ startmodel = np.concatenate((fws, fis, fas, frs))
 # Fix small values to avoid problems in first iteration
 startmodel[startmodel <= 0.01] = 0.01
 
-inv = JointInv(JM, data, error, startmodel, lam=lam, frmin=fr_min, frmax=fr_max,
-               maxIter=maxIter)
+inv = JointInv(JM, data, error, startmodel, lam=lam, frmin=fr_min,
+               frmax=fr_max, maxIter=maxIter)
 inv.setModel(startmodel)
 
 # Run inversion
@@ -111,14 +106,14 @@ print("Min/Max sum:", min(fsum), max(fsum))
 rhoest = JM.fpm.rho(fwe, fie, fae, fre)
 velest = 1. / JM.fpm.slowness(fwe, fie, fae, fre)
 
-array_mask = np.array( ((fae < 0) | (fae > 1 - fre))
-                     | ((fie < 0) | (fie > 1 - fre))
-                     | ((fwe < 0) | (fwe > 1 - fre))
-                     | ((fre < 0) | (fre > 1))
-                     | (fsum > 1.01))
+array_mask = np.array(((fae < 0) | (fae > 1 - fre))
+                      | ((fie < 0) | (fie > 1 - fre))
+                      | ((fwe < 0) | (fwe > 1 - fre))
+                      | ((fre < 0) | (fre > 1))
+                      | (fsum > 1.01))
 
-np.savez("joint_inversion_%s.npz" % scenario, vel=np.array(velest), rho=np.array(rhoest),
-         fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
+np.savez("joint_inversion_%s.npz" % scenario, vel=np.array(velest),
+         rho=np.array(rhoest), fa=fae, fi=fie, fw=fwe, fr=fre, mask=array_mask)
 
 print("#" * 80)
 ertchi, _ = JM.ERTchi2(model, error)

@@ -1,9 +1,3 @@
-#############################################
-# to find "invlib" in the main folder
-import sys, os
-sys.path.insert(0, os.path.abspath("../.."))
-#############################################
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,7 +8,7 @@ import pygimli.meshtools as mt
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
-from invlib import FourPhaseModel, JointMod, JointInv
+from fpinv import FourPhaseModel, JointMod, JointInv
 
 
 def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
@@ -57,7 +51,7 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
     return jacERT, jacSRT
 
 
-# load synthetic mesh (no boundary!)
+# load synthetic mesh
 mesh = pg.load("mesh.bms")
 meshRST = pg.load("paraDomain_2.bms")
 meshRST.createSecondaryNodes(3)

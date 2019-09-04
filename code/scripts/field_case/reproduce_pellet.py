@@ -15,7 +15,7 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import AxesGrid
 
 import pygimli as pg
-from invlib import FourPhaseModel
+from fpinv import FourPhaseModel
 
 dxy = 0.5  # spacing used in x and y direction
 elevation_5198 = 0.12

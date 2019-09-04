@@ -11,7 +11,7 @@ from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 import pygimli as pg
-from invlib import add_inner_title, logFormat, rst_cov, set_style
+from fpinv import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.mplviewer import drawModel
 from reproduce_pellet import plot_boreholes
 fs = 4.5

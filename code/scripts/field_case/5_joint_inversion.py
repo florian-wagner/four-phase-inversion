@@ -7,7 +7,7 @@ sys.path.insert(0, path)
 import numpy as np
 
 import pygimli as pg
-from invlib import FourPhaseModel, JointInv, JointMod
+from fpinv import FourPhaseModel, JointInv, JointMod
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 

@@ -1,8 +1,10 @@
-### Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data
+## Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data
 
 by Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christian Hauck
 
 ---
+
+![https://img.shields.io/badge/powered%20by-pyGIMLi-informational?style=flat&logo=python&logoColor=white](https://www.pygimli.org)
 
 **This repository contains the data and code to reproduce all results and figures published in the following paper:**
 
@@ -34,21 +36,21 @@ or [download a zip archive](https://github.com/florian-wagner/four-phase-inversi
 
 ## Dependencies
 
-You'll need a working Python environment to run the code.
-The recommended way to set up your environment is through the
-[Anaconda Python distribution](https://www.anaconda.com/download/) which
-provides the `conda` package manager.
-Anaconda can be installed in your user directory and does not interfere with
-the system Python installation.
-The required dependencies are specified in the file `environment.yml`.
+You'll need a working Python environment on a Linux machine to run the code.
+Other operating systems are generally possible, but have not been tested. The
+recommended way to set up your environment is through the [Anaconda Python
+distribution](https://www.anaconda.com/download/) which provides the `conda`
+package manager. Anaconda can be installed in your user directory and does not
+interfere with the system Python installation. The required dependencies are
+specified in the file `environment.yml`.
 
-We use `conda` virtual environments to manage the project dependencies in isolation.
-Thus, you can install our dependencies without causing conflicts with your
-setup (even with different Python versions).
+We use `conda` virtual environments to manage the project dependencies in
+isolation. Thus, you can install our dependencies without causing conflicts with
+your setup (even with different Python versions).
 
-Run the following command in the repository folder (where `environment.yml`
-is located) to create a separate environment and install all required
-dependencies in it:
+Run the following command in the repository folder (where `environment.yml` is
+located) to create a separate environment and install all required dependencies
+in it:
 
     conda env create
 
@@ -59,14 +61,10 @@ Before running any code you must activate the conda environment:
 
     source activate four-phase-inversion
 
-or, if you're on Windows:
-
-    activate four-phase-inversion
-
 This will enable the environment for your current terminal session.
 Any subsequent commands will use software that is installed in the environment.
 
-To build and test the software, produce all results and figures, and compile
+To build the software, produce all results and figures, and compile
 the manuscript PDF, run this in the top level of the repository:
 
     make all
@@ -76,24 +74,6 @@ If all goes well, the manuscript PDF will be placed in `manuscript/output`.
 You can also run individual steps in the process using the `Makefile`s from the
 `code` and `manuscript` folders. See the respective `README.md` files for
 instructions.
-
-Another way of exploring the code results is to execute the Jupyter notebooks
-individually.
-To do this, you must first start the notebook server by going into the
-repository top level and running:
-
-    jupyter notebook
-
-This will start the server and open your default web browser to the Jupyter
-interface. In the page, go into the `code/notebooks` folder and select the
-notebook that you wish to view/run.
-
-The notebook is divided into cells (some have text while other have code).
-Each cell can be executed using `Shift + Enter`.
-Executing text cells does nothing and executing code cells runs the code
-and produces it's output.
-To execute the whole notebook, run all cells in order.
-
 
 ## License
 
@@ -109,4 +89,8 @@ properly cited.
 
 ## Credits
 
-The software implementation is based on [pyGIMLi](https://www.pygimli.org) (and its dependencies), which would not exist without the dedication of Carsten Rücker (@carsten-forty2). This repository is heavily inspired by a [template for reproducible research papers](https://www.leouieda.com/blog/paper-template.html) by Leonardo Uieda (@leouieda).
+The software implementation is based on [pyGIMLi](https://www.pygimli.org) (and
+its dependencies), which would not exist without the dedication of Carsten
+Rücker. This repository is heavily inspired by a [template for
+reproducible research papers](https://www.leouieda.com/blog/paper-template.html)
+by Leonardo Uieda.
