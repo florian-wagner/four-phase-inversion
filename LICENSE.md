@@ -1,6 +1,6 @@
-BSD 3-Clause License
+# BSD 3-Clause License
 
-Copyright (c) 2019, Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, Christian Hauck
+Copyright (c) 2019, Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christian Hauck
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -27,3 +27,21 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Citation
+
+If you find this work useful for your own work, please cite the following paper:
+
+> Wagner, F. M., Mollaret, C., Günther, T., Kemna, A., & Hauck, C. (2019). Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data. Geophysical Journal International. https://doi.org/10.1093/gji/ggz402
+
+### BibTex code
+
+    @article{Wagner2019,
+      author = {Wagner, F. M. and Mollaret, C. and G\"{u}nther, T. and Kemna, A. and Hauck, C.},
+      title = "{Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data}",
+      journal = {Geophysical Journal International},
+      year = {2019},
+      month = {09},
+      doi = {10.1093/gji/ggz402},
+      url = {https://doi.org/10.1093/gji/ggz402},
+    }
