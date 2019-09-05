@@ -1,16 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
-
-
-get_ipython().run_line_magic('matplotlib', 'inline')
-
-
 # # Plot settings
-
-# In[4]:
-
 
 from fpinv import set_style
 fs = 6
@@ -28,19 +19,12 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 # # Plot model covariance matrices
 
-# In[10]:
-
-
 J = np.load("jacJoint.npz", allow_pickle=True)
 colsum = np.sum(J, axis=0)
 
 # normalize to cumulative sensitivity (row sums of J)
 MCMc = np.load("./MCMconst.npz", allow_pickle=True)
 MCM = np.load("./MCM.npz", allow_pickle=True)
-
-
-# In[19]:
-
 
 # Plot
 size=  3.67
@@ -56,13 +40,13 @@ for ax, mat in zip(grid.axes_all, [MCM, MCMc]):
     ticks = np.linspace(-0.5, 4*n -0.5, 5)
     ax.set_xticks(ticks)
     ax.set_yticks(ticks)
-    
+
     ax.set_xlim(-0.5, 4*n - 0.5)
     ax.set_ylim(-0.5, 4*n - 0.5)
 
     ax.invert_yaxis()
     ax.xaxis.tick_top()
-          
+
     minorLocator = FixedLocator(ticks[:-1] + n/2)
     subMinorLocator = FixedLocator(np.arange(4*n))
     majorFormatter = NullFormatter()
@@ -78,12 +62,12 @@ for ax, mat in zip(grid.axes_all, [MCM, MCMc]):
     ax.set_xticklabels(long_labels,minor=True)
     ax.set_yticklabels(ylabs, minor=True, fontsize=5.5)
     ax.set_xticklabels(long_labels, minor=True, fontsize=5.5)
-    
+
     ax.tick_params(axis='x', which='minor')
     ax.tick_params(axis='x', which='minor', bottom=False, top=True, labelbottom=False, labeltop=True)
 
     ax.grid(which="major", color="0.5", linestyle='--')
-    
+
 for ax, title, letter in zip(grid.axes_all, [
         "Unconstrained\n", "With volume\nconservation constraints"
 ], "ab"):
@@ -98,4 +82,3 @@ cbar.set_ticks([minv, 0, maxv])
 cbar.set_ticklabels([" %.2f" % minv, "0", " %.2f" % maxv])
 cbar.set_label(label="Model covariance", labelpad=-6, fontweight="semibold", fontsize=fs)
 fig.savefig("Fig4_one_column.pdf")
-
