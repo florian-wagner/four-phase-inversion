@@ -10,7 +10,6 @@ manuscript/output
 *.matrix
 *.mat
 *.npy
-*.png
 *.npz
 
 __pycache__/*
