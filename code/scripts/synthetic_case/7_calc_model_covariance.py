@@ -1,14 +1,13 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
-
+from fpinv import FourPhaseModel
 from pybert.manager import ERTManager
 from pygimli.physics import Refraction
 from pygimli.physics.traveltime import createRAData
-from fpinv import FourPhaseModel, JointMod, JointInv
 
 
 def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
@@ -20,7 +19,7 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     rho = fpm.rho(*Fx)
     slo = fpm.slowness(*Fx)
 
-    rho = np.append(rho, np.mean(rho)) # outer region
+    rho = np.append(rho, np.mean(rho))  # outer region
     rhoVec = rho[meshERT.cellMarkers()]  # needs to be copied!
     sloVec = slo[meshRST.cellMarkers()]
 
@@ -42,7 +41,8 @@ def jacobian4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx, df=0.01,
         print(Fx.flat[i], end=" ")
         Fx1 = np.copy(Fx)
         Fx1.flat[i] += df
-        dataERT1, dataSRT1 = forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx1)
+        dataERT1, dataSRT1 = forward4PM(meshERT, meshRST, schemeERT, schemeSRT,
+                                        Fx1)
         jacERT[:, i] = (np.log(dataERT1('rhoa')) -
                         np.log(dataERT('rhoa'))) / df / errorERT
         jacSRT[:, i] = (dataSRT1('t') - dataSRT('t')) / df / errorSRT
@@ -66,7 +66,7 @@ for cell in meshERT.cells():
     if NN:
         cell.setMarker(mesh.cellMarkers()[NN.id()])
     else:
-        cell.setMarker(len(np.unique(mesh.cellMarkers()))) # triangle boundary
+        cell.setMarker(len(np.unique(mesh.cellMarkers())))  # triangle boundary
 
 # create scheme files
 sensors = np.load("sensors.npy", allow_pickle=True)
@@ -88,13 +88,13 @@ MCM.dump("MCM.npz")
 # plt.matshow(MCM)
 # %%
 npar, nreg = Fsyn.shape
-gMat = np.zeros((nreg, npar*nreg))
+gMat = np.zeros((nreg, npar * nreg))
 for i in range(nreg):
     for j in range(npar):
-        gMat[i, j*nreg+i] = 1.0
+        gMat[i, j * nreg + i] = 1.0
 # %%
 pg.tic("Calculating JTJ")
-jacJointConst = np.vstack((jacJoint, gMat*10000))
+jacJointConst = np.vstack((jacJoint, gMat * 10000))
 JTJconst = jacJointConst.T.dot(jacJointConst)
 pg.toc()
 
