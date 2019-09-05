@@ -1,4 +1,4 @@
-## Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data
+## Imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data
 
 by Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christian Hauck
 
