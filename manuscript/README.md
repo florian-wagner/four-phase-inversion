@@ -4,7 +4,7 @@ This folder contains the figures and [LaTeX](https://www.latex-project.org/)
 sources for the paper building upon the [GJI LaTeX
 template](https://academic.oup.com/DocumentLibrary/GJI/gji-latex.zip).
 
-The text is in file `manuscript.tex`, references are handled by bibtex and
+The text is in file `four-phase-inversion.tex`, references are handled by bibtex and
 stored in `references.bib`, and the `Makefile` has the commands for building
 the PDF (using the build automation tool
 [make](https://en.wikipedia.org/wiki/Make_(software))).
@@ -15,18 +15,18 @@ figure files change.
 
 ## Instructions
 
-* Build the `manuscript.pdf` (all output files are placed in the `output`
+* Build the `four-phase-inversion.pdf` (all output files are placed in the `output`
   folder):
 
         make
 
-* Open `manuscript.pdf` in a PDF viewer (only works on Linux [requires
+* Open `four-phase-inversion.pdf` in a PDF viewer (only works on Linux [requires
   `xdg-open`] and Mac):
 
         make show
 
 * Estimate the number of words in the paper (only counts words in
-  `manuscript.tex`):
+  `four-phase-inversion.tex`):
 
         make wc
 
