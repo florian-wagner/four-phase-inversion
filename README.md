@@ -18,17 +18,41 @@ by Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christia
 
 ## Abstract
 
-Quantitative estimation of pore fractions filled with liquid water, ice, and air is crucial for a process-based understanding of permafrost and its hazard potential upon climate-induced degradation. Geophysical methods offer opportunities to image distributions of permafrost constituents in a non-invasive manner. We present a method to jointly estimate the volumetric fractions of liquid water, ice, air, and the rock matrix from seismic refraction and electrical resistivity data. Existing approaches rely on conventional inversions of both data sets and a suitable a-priori estimate of the porosity distribution to transform velocity and resistivity models into estimates for the four-phase system, often leading to non-physical results. Based on two synthetic experiments and a field data set from an Alpine permafrost site (Schilthorn, Bernese Alps, Switzerland), it is demonstrated that the developed petrophysical joint inversion provides physically plausible solutions, even in the absence of prior porosity estimates. An assessment of the model covariance matrix for the coupled inverse problem reveals remaining petrophysical ambiguities, in particular between ice and rock matrix. Incorporation of petrophysical a-priori information is demonstrated by penalizing ice occurrence within the first two meters of the subsurface where the measured borehole temperatures are positive. Joint inversion of the field data set reveals a shallow air-rich layer with high porosity on top of a lower-porosity subsurface with laterally varying ice and liquid water contents. Non-physical values (e.g., negative saturations) do not occur and estimated ice saturations of 0-50% as well as liquid water saturations of 15-75% are in agreement with the relatively warm borehole temperatures between -0.5 °C and 3 °C. The presented method helps to improve quantification of water, ice, and air from geophysical observations.
+Quantitative estimation of pore fractions filled with liquid water, ice, and air
+is crucial for a process-based understanding of permafrost and its hazard
+potential upon climate-induced degradation. Geophysical methods offer
+opportunities to image distributions of permafrost constituents in a
+non-invasive manner. We present a method to jointly estimate the volumetric
+fractions of liquid water, ice, air, and the rock matrix from seismic refraction
+and electrical resistivity data. Existing approaches rely on conventional
+inversions of both data sets and a suitable a-priori estimate of the porosity
+distribution to transform velocity and resistivity models into estimates for the
+four-phase system, often leading to non-physical results. Based on two synthetic
+experiments and a field data set from an Alpine permafrost site (Schilthorn,
+Bernese Alps, Switzerland), it is demonstrated that the developed petrophysical
+joint inversion provides physically plausible solutions, even in the absence of
+prior porosity estimates. An assessment of the model covariance matrix for the
+coupled inverse problem reveals remaining petrophysical ambiguities, in
+particular between ice and rock matrix. Incorporation of petrophysical a-priori
+information is demonstrated by penalizing ice occurrence within the first two
+meters of the subsurface where the measured borehole temperatures are positive.
+Joint inversion of the field data set reveals a shallow air-rich layer with high
+porosity on top of a lower-porosity subsurface with laterally varying ice and
+liquid water contents. Non-physical values (e.g., negative saturations) do not
+occur and estimated ice saturations of 0-50% as well as liquid water saturations
+of 15-75% are in agreement with the relatively warm borehole temperatures
+between -0.5 °C and 3 °C. The presented method helps to improve quantification
+of water, ice, and air from geophysical observations.
 
 
 ## Structure of this repository
 
 All source code used to generate the results and figures in the paper are in the
-`code` folder. The calculations and figure generation run in Python scripts. The
-field data used in this study are provided in `data` folder and the sources for
-the manuscript text and figures  (LaTeX) are in `manuscript`. Results generated
-by the code as they are published are saved in `results`. See the `README.md`
-files in each directory for a full description.
+`code` folder. A Python library holds the important bits and pieces, which are
+resued for calculations and figure generation run in Python scripts. The field
+data used in this study are provided in the `data` folder and the sources for
+the manuscript text and figures  (LaTeX) are in `manuscript`. See the
+`README.md` files in each directory for a full description.
 
 ## Getting the code
 
