@@ -10,7 +10,7 @@ by Florian Wagner, Coline Mollaret, Thomas Günther, Andreas Kemna, and Christia
 
 **This repository contains the data and code to reproduce all results and figures published in the following paper:**
 
-> Wagner, F. M., Mollaret, C., Günther, T., Kemna, A., & Hauck, C. (2019). Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data. Geophysical Journal International. https://doi.org/10.1093/gji/ggz402
+> Wagner, F. M., Mollaret, C., Günther, T., Kemna, A., & Hauck, C. (2019). Quantitative imaging of water, ice, and air in permafrost systems through petrophysical joint inversion of seismic refraction and electrical resistivity data. Geophysical Journal International,  219, 1866-1875, [doi:10.1093/gji/ggz402](https://doi.org/10.1093/gji/ggz402).
 
 ![Workflow](schematic.svg)
 
