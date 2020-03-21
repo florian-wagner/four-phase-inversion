@@ -23,10 +23,10 @@ for i, sensor in enumerate(ertData.sensors()):
 ertData.removeSensorIdx(idx)
 ertData.removeInvalid()
 ertData.removeUnusedSensors()
-ertData.set("err", pg.RVector(ertData.size(), erte))
+ertData.set("err", pg.Vector(ertData.size(), erte))
 ertData.save("ert_filtered.data")
 
-rstData.set("err", pg.RVector(rstData.size(), rste))
+rstData.set("err", pg.Vector(rstData.size(), rste))
 #
 # # Remove two data points with high v_a at zero-offset
 # Calculate offset

@@ -109,7 +109,7 @@ class FourPhaseModel():
         """Syntatic sugar for all fractions including a mask for unrealistic
         values."""
 
-        # RVectors sometimes cause segfaults
+        # Vectors sometimes cause segfaults
         rho = np.array(rho)
         v = np.array(v)
 

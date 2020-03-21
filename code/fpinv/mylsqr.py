@@ -9,7 +9,7 @@ def lsqr(A, b, damp=0.0, x=None, maxiter=200, show=False):
 
     After Paige and Saunders (1982)"""
     if x is None:  # no starting vector
-        x = pg.RVector(A.cols())
+        x = pg.Vector(A.cols())
         u = b
     else:
         u = A.mult(x) - b

@@ -5,11 +5,9 @@ import numpy as np
 import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
-from pybert.manager import ERTManager
-from pygimli.physics import Refraction
+from pygimli.physics import ERTManager
+from pygimli.physics import TravelTimeManager
 from pygimli.physics.traveltime.ratools import createGradientModel2D
-
-pg.verbose = print # temporary
 
 ############
 # Settings
@@ -62,12 +60,13 @@ ert.setMesh(meshERT)
 
 resinv = ert.invert(ertData, lam=30, zWeight=zWeight, maxIter=maxIter)
 print("ERT chi: %.2f" % ert.inv.chi2())
-print("ERT rms: %.2f" % ert.inv.relrms())
+print("ERT rms: %.2f" % ert.inv.inv.relrms())
 np.savetxt("res_conventional_%d.dat" % case, resinv)
 
 # Seismic inversion
-rst = Refraction("tttrue.dat", verbose=True)
-ttData = rst.dataContainer
+ttData = pg.DataContainer("tttrue.dat")
+print(ttData)
+rst = TravelTimeManager(verbose=True)
 rst.setMesh(meshRST, secNodes=3)
 
 veltrue = np.loadtxt("veltrue.dat")
@@ -77,7 +76,7 @@ np.savetxt("rst_startmodel_%d.dat" % case, 1 / startmodel)
 vest = rst.invert(ttData, zWeight=zWeight, startModel=startmodel,
                   maxIter=maxIter, lam=220)
 print("RST chi: %.2f" % rst.inv.chi2())
-print("RST rms: %.2f" % rst.inv.relrms())
+print("RST rms: %.2f" % rst.inv.inv.relrms())
 
 rst.rayCoverage().save("rst_coverage_%d.dat" % case)
 np.savetxt("vel_conventional_%d.dat" % case, vest)

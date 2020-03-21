@@ -8,28 +8,28 @@ class JointInv(LSQRInversion):
                  maxIter=50, fwmin=0, fwmax=1, fimin=0, fimax=1, famin=0,
                  famax=1, frmin=0, frmax=1):
         LSQRInversion.__init__(self, data, fop, verbose=True, dosave=True)
-        self._error = pg.RVector(error)
+        self._error = pg.Vector(error)
 
         # Set data transformations
-        self.logtrans = pg.RTransLog()
-        self.trans = pg.RTrans()
-        self.dcumtrans = pg.RTransCumulative()
+        self.logtrans = pg.trans.TransLog()
+        self.trans = pg.trans.Trans()
+        self.dcumtrans = pg.trans.TransCumulative()
         self.dcumtrans.add(self.trans,
-                           self.forwardOperator().RST.dataContainer.size())
+                           self.forwardOperator().RST.fop.data.size())
         self.dcumtrans.add(self.logtrans,
-                           self.forwardOperator().ERT.data.size())
+                           self.forwardOperator().ERT.fop.data.size())
         self.setTransData(self.dcumtrans)
 
         # Set model transformation
         n = self.forwardOperator().cellCount
-        self.mcumtrans = pg.TransCumulative()
+        self.mcumtrans = pg.trans.TransCumulative()
         self.transforms = []
         phase_limits = [[fwmin, fwmax], [fimin, fimax],
                         [famin, famax], [frmin, frmax]]
         for i, (lower, upper) in enumerate(phase_limits):
             if lower == 0:
                 lower = 0.001
-            self.transforms.append(pg.RTransLogLU(lower, upper))
+            self.transforms.append(pg.trans.TransLogLU(lower, upper))
             self.mcumtrans.add(self.transforms[i], n)
 
         self.setTransModel(self.mcumtrans)
@@ -48,7 +48,7 @@ class JointInv(LSQRInversion):
 
         fop = self.forwardOperator()
         fop.createConstraints()  # Important!
-        ones = pg.RVector(fop._I.rows(), 1.0)
+        ones = pg.Vector(fop._I.rows(), 1.0)
         phiVec = pg.cat(ones, startmodel)
         self.setParameterConstraints(fop._G, phiVec, beta)
         self.setModel(startmodel)

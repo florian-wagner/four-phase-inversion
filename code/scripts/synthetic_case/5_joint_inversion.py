@@ -4,8 +4,8 @@ import numpy as np
 
 import pygimli as pg
 from fpinv import FourPhaseModel, JointInv, JointMod
-from pybert.manager import ERTManager
-from pygimli.physics import Refraction
+from pygimli.physics import ERTManager
+from pygimli.physics import TravelTimeManager
 
 # Settings
 if len(sys.argv) > 1:
@@ -64,17 +64,17 @@ fpm = FourPhaseModel(phi=phi)
 ert = ERTManager()
 ert.setMesh(meshERT)
 ert.setData(ertScheme)
-ert.fop.createRefinedForwardMesh()
 
-rst = Refraction("tttrue.dat", verbose=True)
-ttData = rst.dataContainer
+ttData = pg.DataContainer("tttrue.dat")
+rst = TravelTimeManager(verbose=True)
+rst.setData(ttData)
 rst.setMesh(meshRST, secNodes=3)
 
 # Setup joint modeling and inverse operators
 JM = JointMod(meshRST, ert, rst, fpm, fix_poro=fix_poro, zWeight=0.25)
 
 data = pg.cat(ttData("t"), ertScheme("rhoa"))
-error = pg.cat(rst.relErrorVals(ttData), ertScheme("err"))
+error = pg.cat(ttData("err") / ttData("t"), ertScheme("err"))
 
 # Set gradient starting model of f_ice, f_water, f_air = phi/3
 velstart = np.loadtxt("rst_startmodel_%d.dat" % case)

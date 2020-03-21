@@ -8,12 +8,12 @@ from pygimli.utils import boxprint
 from .mylsqr import lsqr
 
 
-class LSQRInversion(pg.RInversion):
+class LSQRInversion(pg.core.RInversion):
     """LSQR solver based inversion"""
 
     def __init__(self, *args, **kwargs):
         """Init."""
-        pg.RInversion.__init__(self, *args, **kwargs)
+        pg.core.RInversion.__init__(self, *args, **kwargs)
         self.G = None
         self.c = None
         self.my = 1.0
@@ -60,7 +60,7 @@ class LSQRInversion(pg.RInversion):
         tM = self.transModel()
         nData = self.data().size()
         #        nModel = len(model)
-        self.A = pg.BlockMatrix()  # to be filled with scaled J and C matrices
+        self.A = pg.matrix.BlockMatrix()  # to be filled with scaled J and C matrices
         # part 1: data part
         J = self.forwardOperator().jacobian()
         # self.dScale = 1.0 / pg.log(self.error()+1.0)
@@ -76,8 +76,8 @@ class LSQRInversion(pg.RInversion):
         # part 2: normal constraints
         self.checkConstraints()
         self.C = self.forwardOperator().constraints()
-        self.leftC = pg.RVector(self.C.rows(), 1.0)
-        self.rightC = pg.RVector(self.C.cols(), 1.0)
+        self.leftC = pg.Vector(self.C.rows(), 1.0)
+        self.rightC = pg.Vector(self.C.cols(), 1.0)
         self.CC = pg.matrix.MultLeftRightMatrix(self.C, self.leftC,
                                                 self.rightC)
         self.mat2 = self.A.addMatrix(self.CC)

@@ -5,7 +5,7 @@ import pybert as pb
 import pygimli as pg
 
 
-class JointMod(pg.ModellingBase):
+class JointMod(pg.core.ModellingBase):
     def __init__(self, mesh, ertfop, rstfop, petromodel, fix_poro=True,
                  zWeight=1, verbose=True, corr_l=None, fix_water=False,
                  fix_ice=False, fix_air=False):
@@ -26,7 +26,7 @@ class JointMod(pg.ModellingBase):
         fix_poro|water|ice|air : boolean or vector
             Fix to starting model or provide weight vector for particular cells.
         """
-        pg.ModellingBase.__init__(self, verbose)
+        pg.core.ModellingBase.__init__(self, verbose)
         self.mesh = pg.Mesh(mesh)
         self.ERT = ertfop
         self.RST = rstfop
@@ -59,37 +59,37 @@ class JointMod(pg.ModellingBase):
         jacRST = self.RST.fop.jacobian()
 
         # Setting inner derivatives
-        self.jacRSTW = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vw)
-        self.jacRSTI = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vi)
-        self.jacRSTA = pg.MultRightMatrix(jacRST, r=1. / self.fpm.va)
-        self.jacRSTR = pg.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
+        self.jacRSTW = pg.matrix.MultRightMatrix(jacRST, r=1. / self.fpm.vw)
+        self.jacRSTI = pg.matrix.MultRightMatrix(jacRST, r=1. / self.fpm.vi)
+        self.jacRSTA = pg.matrix.MultRightMatrix(jacRST, r=1. / self.fpm.va)
+        self.jacRSTR = pg.matrix.MultRightMatrix(jacRST, r=1. / self.fpm.vr)
 
-        self.jacERTW = pg.MultRightMatrix(
+        self.jacERTW = pg.matrix.MultRightMatrix(
             jacERT, r=self.fpm.rho_deriv_fw(fw, fi, fa, fr))
-        self.jacERTI = pg.MultRightMatrix(
+        self.jacERTI = pg.matrix.MultRightMatrix(
             jacERT, r=self.fpm.rho_deriv_fi(fw, fi, fa, fr))
-        self.jacERTA = pg.MultRightMatrix(
+        self.jacERTA = pg.matrix.MultRightMatrix(
             jacERT, r=self.fpm.rho_deriv_fa(fw, fi, fa, fr))
-        self.jacERTR = pg.MultRightMatrix(
+        self.jacERTR = pg.matrix.MultRightMatrix(
             jacERT, r=self.fpm.rho_deriv_fr(fw, fi, fa, fr))
 
         # Putting subjacobians together in block matrix
-        self.jac = pg.BlockMatrix()
+        self.jac = pg.matrix.BlockMatrix()
         nData = 0
-        self.jac.addMatrix(self.jacRSTW, nData, 0)
-        self.jac.addMatrix(self.jacRSTI, nData, self.cellCount)
-        self.jac.addMatrix(self.jacRSTA, nData, self.cellCount * 2)
-        self.jac.addMatrix(self.jacRSTR, nData, self.cellCount * 3)
-        nData += self.RST.fop.data().size()  # update total vector length
-        self.jac.addMatrix(self.jacERTW, nData, 0)
-        self.jac.addMatrix(self.jacERTI, nData, self.cellCount)
-        self.jac.addMatrix(self.jacERTA, nData, self.cellCount * 2)
-        self.jac.addMatrix(self.jacERTR, nData, self.cellCount * 3)
+
+        jacsRST = [self.jacRSTW, self.jacRSTI, self.jacRSTA, self.jacRSTR]
+        jacsERT = [self.jacERTW, self.jacERTI, self.jacERTA, self.jacERTR]
+
+        for jaclist in jacsRST, jacsERT:
+            for i in range(4):
+                idx = self.jac.addMatrix(jaclist[i])
+                self.jac.addMatrixEntry(idx, nData, self.cellCount * i)
+            nData += self.RST.fop.data.size()  # update total vector length
         self.setJacobian(self.jac)
 
     def createConstraints(self):
         # First order smoothness matrix
-        self._Ctmp = pg.RSparseMapMatrix()
+        self._Ctmp = pg.matrix.SparseMapMatrix()
 
         if self.corr_l is None:
             pg.info("Using smoothing with zWeight = %.2f." % self.zWeight)
@@ -98,9 +98,9 @@ class JointMod(pg.ModellingBase):
 
             # Set zWeight
             rm.setZWeight(self.zWeight)
-            self.cWeight = pg.RVector()
-            rm.fillConstraintsWeight(self.cWeight)
-            self._CW = pg.LMultRMatrix(self._Ctmp, self.cWeight)
+            self.cWeight = pg.Vector()
+            rm.fillConstraintWeights(self.cWeight)
+            self._CW = pg.matrix.LMultRMatrix(self._Ctmp, self.cWeight)
         else:
             pg.info("Using geostatistical constraints with " + str(self.corr_l))
             # Geostatistical constraints by Jordi et al., GJI, 2018
@@ -109,7 +109,7 @@ class JointMod(pg.ModellingBase):
             self._CW = self._Ctmp
 
         # Putting together in block matrix
-        self._C = pg.RBlockMatrix()
+        self._C = pg.matrix.BlockMatrix()
         cid = self._C.addMatrix(self._CW)
         self._C.addMatrixEntry(cid, 0, 0)
         self._C.addMatrixEntry(cid, self._Ctmp.rows(), self.cellCount)
@@ -118,9 +118,9 @@ class JointMod(pg.ModellingBase):
         self.setConstraints(self._C)
 
         # Identity matrix for interparameter regularization
-        self._I = pg.IdentityMatrix(self.cellCount)
+        self._I = pg.matrix.IdentityMatrix(self.cellCount)
 
-        self._G = pg.RBlockMatrix()
+        self._G = pg.matrix.BlockMatrix()
         iid = self._G.addMatrix(self._I)
         self._G.addMatrixEntry(iid, 0, 0)
         self._G.addMatrixEntry(iid, 0, self.cellCount)
@@ -133,7 +133,7 @@ class JointMod(pg.ModellingBase):
         for i, phase in enumerate([self.fix_water, self.fix_ice, self.fix_air,
                                    self.fix_poro]):
             name = phases[i]
-            vec = pg.RVector(self.cellCount)
+            vec = pg.Vector(self.cellCount)
             if phase is True:
                 pg.info("Fixing %s content globally." % name)
                 vec += 1.0
@@ -142,8 +142,8 @@ class JointMod(pg.ModellingBase):
                 phase = np.asarray(phase, dtype="int")
                 vec[phase] = 1.0
             self.fix_val_matrices[name] = pg.matrix.DiagonalMatrix(vec)
-            self._G.addMatrix(self.fix_val_matrices[name],
-                              self._G.rows(), self.cellCount * i)
+            mat = self._G.addMatrix(self.fix_val_matrices[name])
+            self._G.addMatrixEntry(mat, self._G.rows(), self.cellCount * i)
 
     def showModel(self, model):
         fw, fi, fa, fr = self.fractions(model)
@@ -205,6 +205,8 @@ class JointMod(pg.ModellingBase):
         return chi2tt, rmstt
 
     def response(self, model):
+        print(self.RST.fop.mesh())
+        print(self.ERT.fop.mesh())
         return self.response_mt(model)
 
     def response_mt(self, model, i=0):

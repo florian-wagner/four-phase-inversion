@@ -4,8 +4,8 @@ import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 
-from pybert.manager import ERTManager
-from pygimli.physics import Refraction
+from pygimli.physics import ERTManager
+from pygimli.physics import TravelTimeManager
 from pygimli.physics.traveltime import createRAData
 
 mesh = pg.load("mesh.bms")
@@ -28,10 +28,10 @@ ert = ERTManager()
 # increased here to allow testing on Continuous Integration services.
 meshERTFWD = mt.createParaMesh(ertScheme, quality=33.5, paraMaxCellSize=2.0,
                                paraDX=0.2, boundaryMaxCellSize=50,
-                               smooth=[1, 10], paraBoundary=30)
+                               paraBoundary=30)
 pg.show(meshERTFWD)
 
-res = pg.RVector()
+res = pg.Vector()
 pg.interpolate(mesh, rhotrue, meshERTFWD.cellCenters(), res)
 res = mt.fillEmptyToCellArray(meshERTFWD, res, slope=True)
 ert.setMesh(meshERTFWD)
@@ -41,24 +41,24 @@ ertData = ert.simulate(meshERTFWD, res, ertScheme, noiseLevel=0.05,
 ertData.save("erttrue.dat")
 ert.setData(ertData)
 ert.setMesh(meshERTFWD)
-ert.inv.setData(ertData("rhoa"))
+ert.inv.dataVals = ertData("rhoa")
 
 pg.boxprint("Simulate traveltimes")
 meshRSTFWD = pg.Mesh()
 meshRSTFWD.createMeshByMarker(meshERTFWD, 2)
 
-vel = pg.RVector()
+vel = pg.Vector()
 pg.interpolate(mesh, veltrue, meshRSTFWD.cellCenters(), vel)
 vel = mt.fillEmptyToCellArray(meshRSTFWD, vel, slope=False)
 
 ttScheme = createRAData(sensors)
-rst = Refraction(verbose=True)
+rst = TravelTimeManager(verbose=True)
 
 error = 0.0005 # = 0.5 ms
 meshRSTFWD.createSecondaryNodes(3)
-ttData = rst.simulate(meshRSTFWD, 1. / vel, ttScheme,
+ttData = rst.simulate(mesh=meshRSTFWD, slowness=1. / vel, scheme=ttScheme,
                       noisify=True, noiseLevel=0.0, noiseAbs=error)
 ttData.set("err", np.ones(ttData.size()) * error)
 
 rst.setData(ttData)
-rst.dataContainer.save("tttrue.dat")
+rst.fop.data.save("tttrue.dat")
