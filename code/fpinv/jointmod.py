@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
 
 
@@ -181,9 +180,9 @@ class JointMod(pg.core.ModellingBase):
 
         rhoa_fit = (self.ERT.data("rhoa") - rhoa_resp) / rhoa_resp * 100
         lim = np.max(np.abs(rhoa_fit))
-        pb.show(self.ERT.data, ax=axs[0, 1], label=r"Measured data $\rho_a$")
-        pb.show(self.ERT.data, vals=rhoa_fit, cMin=-lim, cMax=lim,
-                label="Relative fit (%%)", cMap="RdBu_r", ax=axs[1, 1])
+        # pb.show(self.ERT.data, ax=axs[0, 1], label=r"Measured data $\rho_a$")
+        # pb.show(self.ERT.data, vals=rhoa_fit, cMin=-lim, cMax=lim,
+        #         label="Relative fit (%%)", cMap="RdBu_r", ax=axs[1, 1])
         fig.show()
         return fig
 
