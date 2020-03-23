@@ -121,9 +121,9 @@ print("ERT chi^2", ertchi)
 print("RST chi^2", rstchi)
 print("#" * 80)
 
-fig = JM.showFit(model)
-title = "Overall chi^2 = %.2f" % inv.getChi2()
-title += "\nERT chi^2 = %.2f" % ertchi
-title += "\nRST chi^2 = %.2f" % rstchi
-fig.suptitle(title)
-fig.savefig("datafit_%s.png" % case, dpi=150)
+#fig = JM.showFit(model)
+#title = "Overall chi^2 = %.2f" % inv.getChi2()
+#title += "\nERT chi^2 = %.2f" % ertchi
+#title += "\nRST chi^2 = %.2f" % rstchi
+#fig.suptitle(title)
+#fig.savefig("datafit_%s.png" % case, dpi=150)

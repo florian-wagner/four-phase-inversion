@@ -167,18 +167,18 @@ class JointMod(pg.core.ModellingBase):
         resp = self.response(model)
 
         fig, axs = plt.subplots(2, 2, figsize=(10, 10))
-        t_resp = resp[:self.RST.dataContainer.size()]
-        rhoa_resp = resp[self.RST.dataContainer.size():]
+        t_resp = resp[:self.RST.fop.data.size()]
+        rhoa_resp = resp[self.RST.fop.data.size():]
         self.RST.showData(response=t_resp, ax=axs[0, 0])
 
-        t_fit = t_resp - self.RST.dataContainer("t")
+        t_fit = t_resp - self.RST.fop.data("t")
         lim = np.max(np.abs(t_fit))
         axs[0, 0].set_title("Traveltime curves with fit")
         axs[1, 0].set_title("Deviation between traveltimes")
         self.RST.showVA(vals=t_fit, ax=axs[1, 0], cMin=-lim, cMax=lim,
                         cmap="RdBu_r")
 
-        rhoa_fit = (self.ERT.data("rhoa") - rhoa_resp) / rhoa_resp * 100
+        rhoa_fit = (self.ERT.fop.data("rhoa") - rhoa_resp) / rhoa_resp * 100
         lim = np.max(np.abs(rhoa_fit))
         # pb.show(self.ERT.data, ax=axs[0, 1], label=r"Measured data $\rho_a$")
         # pb.show(self.ERT.data, vals=rhoa_fit, cMin=-lim, cMax=lim,
@@ -188,17 +188,17 @@ class JointMod(pg.core.ModellingBase):
 
     def ERTchi2(self, model, error):  # chi2 and relative rms for the rhoa data
         resp = self.response(model)
-        resprhoa = resp[self.RST.dataContainer.size():]
-        rhoaerr = error[self.RST.dataContainer.size():]
-        chi2rhoa = pg.utils.chi2(self.ERT.data("rhoa"), resprhoa, rhoaerr)
-        rmsrhoa = pg.rrms(self.ERT.data("rhoa"), resprhoa)
+        resprhoa = resp[self.RST.fop.data.size():]
+        rhoaerr = error[self.RST.fop.data.size():]
+        chi2rhoa = pg.utils.chi2(self.ERT.fop.data("rhoa"), resprhoa, rhoaerr)
+        rmsrhoa = pg.utils.rrms(self.ERT.fop.data("rhoa"), resprhoa)
         return chi2rhoa, rmsrhoa
 
     def RSTchi2(self, model, error,
                 data):  # chi2 and relative rms for the travel time data
         resp = self.response(model)
-        resptt = resp[:self.RST.dataContainer.size()]
-        tterr = error[:self.RST.dataContainer.size()]
+        resptt = resp[:self.RST.fop.data.size()]
+        tterr = error[:self.RST.fop.data.size()]
         chi2tt = pg.utils.chi2(data, resptt, tterr)
         rmstt = np.sqrt(np.mean((resptt - data)**2))
         return chi2tt, rmstt
