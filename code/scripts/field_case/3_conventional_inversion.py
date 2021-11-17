@@ -1,17 +1,14 @@
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
-pg.verbose = print # Temporary fix
 import pygimli.meshtools as mt
 
 from fpinv import FourPhaseModel, NN_interpolate
-from pybert.manager import ERTManager
-from pygimli.physics import Refraction
+from pygimli.physics import Refraction, ERTManager
 from settings import *
 
 #need ertData, rstData, a mesh and phi to be given
-ertData = pb.load("ert_filtered.data")
+ertData = pg.DataContainerERT("ert_filtered.data")
 print(ertData)
 mesh = pg.load("mesh_1.bms")
 paraDomain = pg.load("paraDomain_1.bms")
@@ -24,12 +21,12 @@ print("ERT rms:", ert.inv.relrms())
 
 np.savetxt("res_conventional.dat", resinv)
 #############
-rst = Refraction("rst_filtered.data", verbose=True)
-ttData = rst.dataContainer
+ttData = pg.DataContainer("rst_filtered.data", "s g")
+rst = Refraction(ttData)
 
 # INVERSION
 rst.setMesh(mesh, secNodes=3)
-from pygimli.physics.traveltime.ratools import createGradientModel2D
+from pygimli.physics.traveltime import createGradientModel2D
 minvel = 1000
 maxvel = 5000
 startmodel = createGradientModel2D(ttData, paraDomain, minvel, maxvel)

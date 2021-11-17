@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 import pygimli as pg
 from fpinv import add_inner_title, logFormat, rst_cov, set_style
-from pygimli.mplviewer import drawModel
+from pygimli.viewer.mpl import drawModel
 from settings import plot_boreholes
 
 fs = 5.5
@@ -208,7 +208,7 @@ add_labs_to_col(2, labs)
 # Show box around ice constraint
 box = pg.load("box.bms")
 ax = grid.axes_column[2][3]
-pg.mplviewer.drawMeshBoundaries(ax, box, fitView=False, lw=0.5)
+pg.viewer.mpl.drawMeshBoundaries(ax, box, fitView=False, lw=0.5)
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")

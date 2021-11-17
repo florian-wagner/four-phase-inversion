@@ -1,12 +1,11 @@
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
 pg.verbose = print # temporary
 import pygimli.meshtools as mt
 from settings import depth_5000, depth_5198, erte, rste
 
-ertData = pb.load("ert.data")
+ertData = pg.DataContainerERT("ert.data")
 
 print("Number of electrodes:", ertData.sensorCount())
 print(ertData)
@@ -40,11 +39,13 @@ rstData.markInvalid((offset < 5) & (va > 800))
 # # Remove shot 27, too high apparent velocities
 rstData.markInvalid(np.isclose(rstData("s"), 27))
 rstData.markInvalid(210)  # outlier
+rstData.markInvalid(rstData("s") == rstData("g")) # Remove positions where shot is equal to geophone, because simulated traveltime will always be zero.
+rstData.markInvalid(rstData("t") == 0) # Remove positions where shot is equal to geophone, because simulated traveltime will always be zero.
 rstData.removeInvalid()
 rstData.save("rst_filtered.data")
 rstData = pg.DataContainer("rst_filtered.data", "s g")
 #########################
-ertData = pb.load("ert_filtered.data")
+ertData = pg.DataContainerERT("ert_filtered.data")
 print(ertData)
 
 print(len(ertData.sensorPositions()))
@@ -76,7 +77,7 @@ z = pg.z(combinedSensors.sensorPositions()).array()
 np.savetxt("sensors.npy", np.column_stack((x, z)))
 
 print("Number of combined positions:", combinedSensors.sensorCount())
-print(combinedSensors)
+# print(combinedSensors)
 # %%
 
 for case in 1, 2:

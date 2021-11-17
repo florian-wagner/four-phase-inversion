@@ -1,31 +1,10 @@
-# Field case
+# Field data
+This folder contains the electrical, traveltime data originally used in the following publication:
 
-This folder contains the scripts to the figures in section 4 of [the paper](https://academic.oup.com/gji/advance-article-pdf/doi/10.1093/gji/ggz402/29533315/ggz402.pdf).
+> Pellet, C., Hilbich, C., Marmy, A., & Hauck, C. (2016). Soil Moisture Data for the Validation of Permafrost Models Using Direct and Indirect Measurement Approaches at Three Alpine Sites. Frontiers in Earth Science, 3. https://doi.org/10.3389/feart.2015.00091
 
-- Copy data from the `data` folder to the current working directory
+Both geophysical data sets follow the [unified data format](https://gitlab.com/resistivity-net/bert/#the-unified-data-format).
 
-      make prepare
+The CSV files contain borehole log data from the PERMOS network:
 
-- Build mesh and perform preprocessing
-
-      make mesh
-
-- Produce the results shown in Fig. 5a
-
-      make inv
-
-- Produce the results shown in Fig. 5b
-
-      make joint1
-
-- Produce the results shown in Fig. 5c
-
-      make joint2
-
-- Produce figures (Fig.5-7)
-
-      make show
-
-- Remove all files produced by the commands above.
-
-      make clean
+> PERMOS 2019. PERMOS Database. Swiss Permafrost Monitoring Network, Fribourg and Davos, Switzerland. DOI:[10.13093/permos-2019-01](http://dx.doi.org/10.13093/permos-2019-01).

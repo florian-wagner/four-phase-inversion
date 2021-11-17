@@ -15,13 +15,13 @@ class JointInv(LSQRInversion):
         self.trans = pg.trans.Trans()
         self.dcumtrans = pg.trans.TransCumulative()
         self.dcumtrans.add(self.trans,
-                           self.forwardOperator().RST.fop.data.size())
+                           fop.RST.data.size())
         self.dcumtrans.add(self.logtrans,
-                           self.forwardOperator().ERT.fop.data.size())
+                           fop.ERT.data.size())
         self.setTransData(self.dcumtrans)
 
         # Set model transformation
-        n = self.forwardOperator().cellCount
+        n = fop.cellCount
         self.mcumtrans = pg.trans.TransCumulative()
         self.transforms = []
         phase_limits = [[fwmin, fwmax], [fimin, fimax],
@@ -46,7 +46,7 @@ class JointInv(LSQRInversion):
         self.setLambda(lam)
         self.setDeltaPhiAbortPercent(0.25)
 
-        fop = self.forwardOperator()
+        # fop = self.forwardOperator()
         fop.createConstraints()  # Important!
         ones = pg.Vector(fop._I.rows(), 1.0)
         phiVec = pg.cat(ones, startmodel)

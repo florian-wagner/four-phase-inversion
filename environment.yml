@@ -4,10 +4,10 @@ channels:
     - defaults
     - gimli
 dependencies:
-    - python=3.7
-    - pygimli=1.1.0
-    - pybert
+    - python=3.8
+    - pygimli=1.2.2
     - seaborn
     - numpy
     - scipy
     - jupyter
+    - pandas

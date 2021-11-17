@@ -2,9 +2,8 @@ import numpy as np
 
 import pygimli as pg
 from fpinv import FourPhaseModel, JointInv, JointMod
-from pybert.manager import ERTManager
-from pygimli.physics import Refraction
-from pygimli.physics.traveltime.ratools import createGradientModel2D
+from pygimli.physics import Refraction, ERTManager
+from pygimli.physics.traveltime import createGradientModel2D
 from settings import *
 
 args = sys.argv
@@ -38,9 +37,10 @@ ert.setMesh(mesh)
 ert.setData(ertScheme)
 ert.fop.createRefinedForwardMesh()
 
-rst = Refraction("rst_filtered.data", verbose=True)
-ttData = rst.dataContainer
+ttData = pg.DataContainer("rst_filtered.data", "s g")
+rst = Refraction()
 rst.setMesh(paraDomain)
+rst.setData(ttData)
 rst.fop.createRefinedForwardMesh()
 
 # Set errors
@@ -78,7 +78,7 @@ else:
     weight_ert = 1
 
 error = pg.cat(
-    rst.relErrorVals(ttData) / weight_rst,
+    ttData("err") / ttData("t") / weight_rst,
     ertScheme("err") / weight_ert)
 
 minvel = 1000
