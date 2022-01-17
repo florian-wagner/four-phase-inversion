@@ -36,7 +36,7 @@ pg.interpolate(mesh, rhotrue, meshERTFWD.cellCenters(), res)
 res = mt.fillEmptyToCellArray(meshERTFWD, res, slope=True)
 ert.setMesh(meshERTFWD)
 ert.fop.createRefinedForwardMesh()
-ertData = ert.simulate(meshERTFWD, res, ertScheme, noiseLevel=0.05,
+ertData = ert.simulate(meshERTFWD, ertScheme, res, noiseLevel=0.05,
                        noiseAbs=0.0)
 ertData.save("erttrue.dat")
 ert.setData(ertData)
