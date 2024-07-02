@@ -65,8 +65,8 @@ ert = ERTManager()
 ert.setMesh(meshERT)
 ert.setData(ertScheme)
 
-ttData = pg.DataContainer("tttrue.dat")
-rst = TravelTimeManager(verbose=True)
+ttData = pg.DataContainer("tttrue.dat", "s g")
+rst = TravelTimeManager(ttData, verbose=True)
 rst.setData(ttData)
 rst.setMesh(meshRST, secNodes=3)
 

@@ -2,12 +2,11 @@ import sys
 
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 from pygimli.physics import ERTManager
 from pygimli.physics import TravelTimeManager
-from pygimli.physics.traveltime.ratools import createGradientModel2D
+from pygimli.physics.traveltime import createGradientModel2D
 
 ############
 # Settings
@@ -16,7 +15,7 @@ zWeight = 0.25
 ############
 
 case = int(sys.argv[1])
-ertData = pb.load("erttrue.dat")
+ertData = pg.load("erttrue.dat")
 print(ertData)
 mesh = pg.load("mesh.bms")
 depth = mesh.ymax() - mesh.ymin()
@@ -64,9 +63,8 @@ print("ERT rms: %.2f" % ert.inv.inv.relrms())
 np.savetxt("res_conventional_%d.dat" % case, resinv)
 
 # Seismic inversion
-ttData = pg.DataContainer("tttrue.dat")
-print(ttData)
-rst = TravelTimeManager(verbose=True)
+ttData = pg.DataContainer("tttrue.dat", "s g")
+rst = TravelTimeManager(ttData, verbose=True)
 rst.setMesh(meshRST, secNodes=3)
 
 veltrue = np.loadtxt("veltrue.dat")

@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 import pygimli as pg
 from fpinv import add_inner_title, logFormat, rst_cov, set_style
-from pygimli.mplviewer import drawModel
+from pygimli.viewer.mpl import drawModel
 
 fs = 5.5
 set_style(fs, style="seaborn-dark")
@@ -104,7 +104,7 @@ def minmax(data):
 # %%
 fig = plt.figure(figsize=(7, 4.5))
 grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.03, 0.03],
-                 share_all=True, add_all=True, cbar_location="right",
+                 share_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
 cov = rst_cov(meshj, np.loadtxt("rst_coverage_%d.dat" % case))
@@ -220,11 +220,11 @@ for i, (ax, label) in enumerate(zip(grid.axes_column[0], long_labels)):
             style = "solid"
             if np.isclose(bound.size(), 14.14, atol=0.5):
                 style = "dotted"
-            pg.mplviewer.drawSelectedMeshBoundaries(ax, [bound], linewidth=0.5,
+            pg.viewer.mpl.drawSelectedMeshBoundaries(ax, [bound], linewidth=0.5,
                                                     linestyles=style,
                                                     color="k")
     else:
-        pg.mplviewer.drawPLC(ax, geom, fillRegion=False, lw=0.5)
+        pg.viewer.mpl.drawPLC(ax, geom, fillRegion=False, lw=0.5)
 
 for i, ax in enumerate(grid.axes_all):
     ax.set_facecolor("0.45")

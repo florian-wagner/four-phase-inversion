@@ -1,9 +1,9 @@
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 
+from pygimli.physics import ert
 from pygimli.physics import ERTManager
 from pygimli.physics import TravelTimeManager
 from pygimli.physics.traveltime import createRAData
@@ -16,8 +16,8 @@ veltrue = np.loadtxt("veltrue.dat")
 pg.boxprint("Simulate apparent resistivities")
 
 # Create more realistic data set
-ertScheme = pb.createData(sensors, "dd", spacings=[1,2,4])
-k = pb.geometricFactors(ertScheme)
+ertScheme = ert.createData(sensors, "dd", spacings=[1,2,4])
+k = ert.createGeometricFactors(ertScheme)
 ertScheme.markInvalid(pg.abs(k) > 5000)
 ertScheme.removeInvalid()
 
@@ -36,7 +36,7 @@ pg.interpolate(mesh, rhotrue, meshERTFWD.cellCenters(), res)
 res = mt.fillEmptyToCellArray(meshERTFWD, res, slope=True)
 ert.setMesh(meshERTFWD)
 ert.fop.createRefinedForwardMesh()
-ertData = ert.simulate(meshERTFWD, ertScheme, res, noiseLevel=0.05,
+ertData = ert.simulate(mesh=meshERTFWD, res=res, scheme=ertScheme, noiseLevel=0.05,
                        noiseAbs=0.0)
 ertData.save("erttrue.dat")
 ert.setData(ertData)
