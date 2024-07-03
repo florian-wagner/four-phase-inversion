@@ -10,7 +10,6 @@ from fpinv import add_inner_title, logFormat, rst_cov, set_style
 from pygimli.viewer.mpl import drawModel
 
 fs = 5.5
-set_style(fs, style="seaborn-dark")
 
 if len(sys.argv) > 1:
     scenario = "Fig2"

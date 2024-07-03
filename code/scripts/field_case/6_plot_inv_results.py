@@ -11,7 +11,6 @@ from pygimli.viewer.mpl import drawModel
 from settings import plot_boreholes
 
 fs = 5.5
-set_style(fs, style="seaborn-dark")
 
 # Load data
 mesh1 = pg.load("paraDomain_1.bms")
@@ -111,7 +110,7 @@ def minmax(data):
 # %%
 fig = plt.figure(figsize=(7, 4.5))
 grid = ImageGrid(fig, 111, nrows_ncols=(6, 3), axes_pad=[0.03, 0.03],
-                 share_all=True, add_all=True, cbar_location="right",
+                 share_all=True, cbar_location="right",
                  cbar_mode="edge", cbar_size="5%", cbar_pad=0.05, aspect=True)
 
 cov = rst_cov(mesh1, np.loadtxt("rst_coverage.dat"))
