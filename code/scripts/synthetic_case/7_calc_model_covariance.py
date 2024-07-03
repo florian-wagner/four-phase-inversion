@@ -1,19 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pybert as pb
 import pygimli as pg
 import pygimli.meshtools as mt
 from fpinv import FourPhaseModel
-from pybert.manager import ERTManager
+from pygimli.physics import ERTManager
+from pygimli.physics import ert
 from pygimli.physics import Refraction
-from pygimli.physics.traveltime import createRAData
+from pygimli.physics.traveltime import createRAData, simulate
 
+ertSIM = ert.simulate
+srtSIM = simulate
 
 def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     """Forward response of fx."""
-    ert = ERTManager()
-    srt = Refraction()
     phi = 1 - Fx[-1]
     fpm = FourPhaseModel(phi=phi)
     rho = fpm.rho(*Fx)
@@ -23,8 +23,8 @@ def forward4PM(meshERT, meshRST, schemeERT, schemeSRT, Fx):
     rhoVec = rho[meshERT.cellMarkers()]  # needs to be copied!
     sloVec = slo[meshRST.cellMarkers()]
 
-    dataERT = ert.simulate(meshERT, rhoVec, schemeERT)
-    dataSRT = srt.simulate(meshRST, sloVec, schemeSRT)
+    dataERT = ertSIM(meshERT, schemeERT, rhoVec)
+    dataSRT = srtSIM(meshRST, schemeSRT, sloVec)
     return dataERT, dataSRT
 
 

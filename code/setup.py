@@ -12,7 +12,7 @@ URL = "https://github.com/florian-wagner/four-phase-inversion"
 DESCRIPTION = "Joint inversion of seismic refraction and electrical resistivity data to estimate water, ice, and air contents."
 LONG_DESCRIPTION = DESCRIPTION
 
-VERSION = '1.0'
+VERSION = '1.1'
 
 PACKAGES = find_packages()
 SCRIPTS = []
