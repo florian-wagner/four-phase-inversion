@@ -134,3 +134,6 @@ its dependencies), which would not exist without the dedication of Carsten
 Rücker. This repository is heavily inspired by a [template for
 reproducible research papers](https://www.leouieda.com/blog/paper-template.html)
 by Leonardo Uieda.
+
+## Note on branches
+The `master` branch is compatible with the latest pyGIMLi version. In the `paper` branch, you will find the original version published with the above-mentioned paper.

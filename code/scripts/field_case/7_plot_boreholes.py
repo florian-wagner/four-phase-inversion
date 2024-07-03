@@ -16,7 +16,6 @@ import numpy as np
 
 from fpinv import set_style
 fs = 5.5
-set_style(fs, style="seaborn-dark")
 
 
 # In[2]:

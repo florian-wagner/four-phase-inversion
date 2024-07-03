@@ -4,8 +4,8 @@ channels:
     - defaults
     - gimli
 dependencies:
-    - python=3.9
-    - pygimli=1.2.3
+    - python
+    - pygimli>=1.5.0
     - seaborn
     - numpy
     - scipy
